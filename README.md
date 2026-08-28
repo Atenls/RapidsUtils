@@ -50,13 +50,21 @@ On first launch the mod creates `config/rapidsutils.json`:
 ```json
 {
   "enabled": true,
-  "margin": 8,
-  "backgroundOpacity": 0.75,
+  "margin": 5,
+  "backgroundOpacity": 0.6,
   "maxWidth": 300,
   "topics": {
     "dungeon": {
       "displaySeconds": 3.0,
-      "template": "{rhombus} {dungeonDisplay}\n- &#999999材料掉落 &#80b0d0{itemgot}/{itemgotmax}\n- &#999999特殊掉落 &#80b0d0{dropsgot}/{dropsgotmax}\n- &#999999药剂掉落 &#80b0d0{healingPotionGot}/{healingPotionGotMax}"
+      "template": "{rhombus} {dungeonDisplay}\n   &#999999特殊掉落 &#80b0d0{itemgot}/{itemgotmax}\n   &#999999材料掉落 &#80b0d0{dropsgot}/{dropsgotmax}\n   &#999999药剂掉落 &#80b0d0{healingPotionGot}/{healingPotionGotMax}"
+    },
+    "mastery": {
+      "displaySeconds": 3.0,
+      "template": "{rhombus} &#8098b8天赋状态{lootinstinctDisplay}{chestmagnetDisplay}{rarelootDisplay}"
+    },
+    "update": {
+      "displaySeconds": 60.0,
+      "template": "{rhombus} &#8098b8Mod 已有可用更新! {version} \n 前往 wiki.dp4.us/#/rapids/updatelogs 查看更新日志并获取新 Mod !"
     }
   }
 }

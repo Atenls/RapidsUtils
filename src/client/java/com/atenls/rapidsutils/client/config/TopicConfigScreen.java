@@ -116,8 +116,9 @@ public final class TopicConfigScreen extends Screen {
 
     private void resetTemplate() {
         String topic = topicField.getText().trim();
-        displaySeconds = RapidsConfig.DEFAULT_DISPLAY_SECONDS;
-        initialTemplate = "dungeon".equals(topic) ? RapidsConfig.DUNGEON_TEMPLATE : "";
+        RapidsConfig.TopicSettings defaults = RapidsConfig.defaultTopic(topic);
+        displaySeconds = defaults.displaySeconds;
+        initialTemplate = defaults.template;
         clearAndInit();
     }
 

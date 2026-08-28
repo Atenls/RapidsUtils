@@ -21,15 +21,19 @@ public final class RapidsConfig {
     public static final double DEFAULT_DISPLAY_SECONDS = 3.0D;
     public static final String DUNGEON_TEMPLATE = """
             {rhombus} {dungeonDisplay}
-            - &#999999材料掉落 &#80b0d0{itemgot}/{itemgotmax}
-            - &#999999特殊掉落 &#80b0d0{dropsgot}/{dropsgotmax}
-            - &#999999药剂掉落 &#80b0d0{healingPotionGot}/{healingPotionGotMax}""";
+               &#999999特殊掉落 &#80b0d0{itemgot}/{itemgotmax}
+               &#999999材料掉落 &#80b0d0{dropsgot}/{dropsgotmax}
+               &#999999药剂掉落 &#80b0d0{healingPotionGot}/{healingPotionGotMax}""";
+    public static final String MASTERY_TEMPLATE =
+            "{rhombus} &#8098b8天赋状态{lootinstinctDisplay}{chestmagnetDisplay}{rarelootDisplay}";
+    public static final String UPDATE_TEMPLATE =
+            "{rhombus} &#8098b8Mod 已有可用更新! {version} \n 前往 wiki.dp4.us/#/rapids/updatelogs 查看更新日志并获取新 Mod !";
 
     private static RapidsConfig loaded;
 
     public boolean enabled = true;
-    public int margin = 8;
-    public float backgroundOpacity = 0.75F;
+    public int margin = 5;
+    public float backgroundOpacity = 0.6F;
     public int maxWidth = 300;
     public Map<String, TopicSettings> topics = defaultTopics();
 
@@ -104,13 +108,20 @@ public final class RapidsConfig {
         }
         topics.entrySet().removeIf(entry -> entry.getKey() == null || entry.getKey().isBlank() || entry.getValue() == null);
         topics.values().forEach(TopicSettings::sanitize);
-        topics.putIfAbsent("dungeon", new TopicSettings(DEFAULT_DISPLAY_SECONDS, DUNGEON_TEMPLATE));
+        defaultTopics().forEach(topics::putIfAbsent);
     }
 
     private static Map<String, TopicSettings> defaultTopics() {
         LinkedHashMap<String, TopicSettings> defaults = new LinkedHashMap<>();
         defaults.put("dungeon", new TopicSettings(DEFAULT_DISPLAY_SECONDS, DUNGEON_TEMPLATE));
+        defaults.put("mastery", new TopicSettings(DEFAULT_DISPLAY_SECONDS, MASTERY_TEMPLATE));
+        defaults.put("update", new TopicSettings(60.0D, UPDATE_TEMPLATE));
         return defaults;
+    }
+
+    public static TopicSettings defaultTopic(String topic) {
+        TopicSettings settings = defaultTopics().get(topic);
+        return settings == null ? new TopicSettings(DEFAULT_DISPLAY_SECONDS, "") : settings;
     }
 
     public static final class TopicSettings {
