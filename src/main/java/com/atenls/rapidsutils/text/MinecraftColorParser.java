@@ -25,6 +25,14 @@ public final class MinecraftColorParser {
         int visibleCharacters = 0;
 
         for (int index = 0; index < input.length();) {
+            int ampersandHex = readAmpersandHexColor(input, index);
+            if (ampersandHex >= 0) {
+                flush(result, currentText, currentColor);
+                currentColor = ampersandHex;
+                index += 8;
+                continue;
+            }
+
             if (input.charAt(index) == '§' && index + 1 < input.length()) {
                 int hexColor = readHexColor(input, index);
                 if (hexColor >= 0) {
@@ -81,6 +89,22 @@ public final class MinecraftColorParser {
                 return -1;
             }
             int digit = Character.digit(input.charAt(sectionIndex + 1), 16);
+            if (digit < 0) {
+                return -1;
+            }
+            color = (color << 4) | digit;
+        }
+        return color;
+    }
+
+    private static int readAmpersandHexColor(String input, int start) {
+        if (start + 8 > input.length() || input.charAt(start) != '&' || input.charAt(start + 1) != '#') {
+            return -1;
+        }
+
+        int color = 0;
+        for (int index = start + 2; index < start + 8; index++) {
+            int digit = Character.digit(input.charAt(index), 16);
             if (digit < 0) {
                 return -1;
             }

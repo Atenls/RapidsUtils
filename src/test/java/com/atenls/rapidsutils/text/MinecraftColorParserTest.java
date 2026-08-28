@@ -36,4 +36,15 @@ class MinecraftColorParserTest {
 
         assertEquals(List.of(new MinecraftColorParser.Segment("ABC…", 0xFF5555)), segments);
     }
+
+    @Test
+    void parsesAmpersandRgbWithoutTreatingLegacyAmpersandAsColor() {
+        List<MinecraftColorParser.Segment> segments = MinecraftColorParser.parse(
+                "&#80b0d0Value &aLiteral",
+                0xFFFFFF,
+                100
+        );
+
+        assertEquals(List.of(new MinecraftColorParser.Segment("Value &aLiteral", 0x80B0D0)), segments);
+    }
 }

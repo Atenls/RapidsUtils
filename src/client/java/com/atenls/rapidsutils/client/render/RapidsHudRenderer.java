@@ -3,7 +3,9 @@ package com.atenls.rapidsutils.client.render;
 import com.atenls.rapidsutils.client.config.RapidsConfig;
 import com.atenls.rapidsutils.display.HudLine;
 import com.atenls.rapidsutils.display.JsonDisplayFormatter;
+import com.atenls.rapidsutils.display.TopicTemplateFormatter;
 import com.atenls.rapidsutils.protocol.DataEnvelope;
+import com.atenls.rapidsutils.state.TopicSnapshot;
 import com.atenls.rapidsutils.state.TopicSnapshotStore;
 import com.atenls.rapidsutils.text.MinecraftColorParser;
 import net.minecraft.client.MinecraftClient;
@@ -19,9 +21,9 @@ import java.util.List;
 
 public final class RapidsHudRenderer {
     private static final int PANEL_PADDING = 8;
-    private static final int MIN_PANEL_WIDTH = 156;
+    private static final int PANEL_GAP = 6;
+    private static final int MIN_PANEL_WIDTH = 120;
     private static final int LINE_HEIGHT = 10;
-    private static final int TOPIC_GAP = 5;
     private static final int INDENT_WIDTH = 10;
     private static final int BACKGROUND_RGB = 0x050607;
     private static final int ACCENT = 0x8BD5CA;
@@ -30,7 +32,8 @@ public final class RapidsHudRenderer {
 
     private final TopicSnapshotStore store;
     private final RapidsConfig config;
-    private final JsonDisplayFormatter formatter = new JsonDisplayFormatter();
+    private final JsonDisplayFormatter jsonFormatter = new JsonDisplayFormatter();
+    private final TopicTemplateFormatter templateFormatter = new TopicTemplateFormatter();
 
     public RapidsHudRenderer(TopicSnapshotStore store, RapidsConfig config) {
         this.store = store;
@@ -38,85 +41,98 @@ public final class RapidsHudRenderer {
     }
 
     public void render(DrawContext context, RenderTickCounter tickCounter) {
-        List<DataEnvelope> topics = store.snapshot().newestFirst();
-        if (!config.enabled || topics.isEmpty()) {
+        if (!config.enabled) {
             return;
         }
 
         MinecraftClient client = MinecraftClient.getInstance();
         TextRenderer textRenderer = client.textRenderer;
-        int availableWidth = context.getScaledWindowWidth() - config.margin * 2;
-        int availableHeight = context.getScaledWindowHeight() - config.margin * 2;
-        if (availableWidth < 40 || availableHeight < 30) {
+        int screenWidth = context.getScaledWindowWidth();
+        int screenHeight = context.getScaledWindowHeight();
+        int availableWidth = screenWidth - config.margin * 2;
+        if (availableWidth < 40) {
             return;
         }
 
         int panelMaxWidth = Math.min(config.maxWidth, availableWidth);
-        int contentMaxWidth = Math.max(20, panelMaxWidth - PANEL_PADDING * 2);
-        int maxRows = Math.max(1, (availableHeight - PANEL_PADDING * 2) / LINE_HEIGHT);
-        List<RenderRow> rows = buildRows(textRenderer, topics, contentMaxWidth, maxRows);
-        if (rows.isEmpty()) {
-            return;
-        }
+        int y = config.margin;
+        long now = System.currentTimeMillis();
+        for (TopicSnapshot snapshot : store.snapshot().newestFirst()) {
+            DataEnvelope envelope = snapshot.envelope();
+            long visibleMillis = Math.round(config.displaySeconds(envelope.topic()) * 1000.0D);
+            if (!snapshot.isVisibleAt(now, visibleMillis)) {
+                continue;
+            }
 
-        int contentWidth = rows.stream()
-                .mapToInt(row -> row.indent() + textRenderer.getWidth(row.text()))
-                .max()
-                .orElse(0);
-        int panelWidth = Math.min(panelMaxWidth, Math.max(Math.min(MIN_PANEL_WIDTH, panelMaxWidth), contentWidth + PANEL_PADDING * 2));
-        int panelHeight = PANEL_PADDING * 2 + rows.stream().mapToInt(RenderRow::height).sum();
-        int x = Math.min(config.margin, Math.max(0, context.getScaledWindowWidth() - panelWidth));
-        int y = Math.min(config.margin, Math.max(0, context.getScaledWindowHeight() - panelHeight));
-
-        fillRounded(context, x, y, panelWidth, panelHeight, 8, alphaColor(config.backgroundOpacity, BACKGROUND_RGB));
-        int rowY = y + PANEL_PADDING;
-        for (RenderRow row : rows) {
-            rowY += row.gapBefore();
-            context.drawText(textRenderer, row.text(), x + PANEL_PADDING + row.indent(), rowY, 0xFFFFFFFF, true);
-            rowY += LINE_HEIGHT;
-        }
-    }
-
-    private List<RenderRow> buildRows(TextRenderer renderer, List<DataEnvelope> topics, int maxWidth, int maxRows) {
-        ArrayList<RenderRow> rows = new ArrayList<>();
-        rows.add(new RenderRow(0, 0, styledText(List.of(
-                new MinecraftColorParser.Segment("◆ ", ACCENT),
-                new MinecraftColorParser.Segment("RAPIDS DATA", TITLE)
-        ), true).asOrderedText()));
-
-        boolean truncated = false;
-        for (int topicIndex = 0; topicIndex < topics.size(); topicIndex++) {
-            DataEnvelope topic = topics.get(topicIndex);
-            if (rows.size() >= maxRows) {
-                truncated = true;
+            int availableHeight = screenHeight - config.margin - y;
+            if (availableHeight < PANEL_PADDING * 2 + LINE_HEIGHT) {
                 break;
             }
 
-            int gap = topicIndex == 0 ? 2 : TOPIC_GAP;
-            Text topicText = styledText(List.of(
-                    new MinecraftColorParser.Segment(topic.topic(), TITLE),
-                    new MinecraftColorParser.Segment("  #" + topic.sequence(), META)
-            ), true);
-            rows.add(new RenderRow(0, gap, topicText.asOrderedText()));
+            List<HudLine> logicalLines = linesFor(envelope);
+            RenderPanel panel = layoutPanel(textRenderer, logicalLines, panelMaxWidth, availableHeight);
+            if (panel.rows().isEmpty()) {
+                continue;
+            }
 
-            for (HudLine logical : formatter.format(topic.data())) {
-                int indent = Math.min(INDENT_WIDTH * (logical.depth() + 1), Math.max(0, maxWidth / 2));
-                Text text = styledText(logical.spans(), false);
-                List<OrderedText> wrapped = renderer.wrapLines(text, Math.max(20, maxWidth - indent));
-                int wrapCount = Math.min(3, wrapped.size());
-                for (int index = 0; index < wrapCount; index++) {
-                    if (rows.size() >= maxRows) {
-                        truncated = true;
-                        break;
-                    }
-                    rows.add(new RenderRow(indent, 0, wrapped.get(index)));
-                }
+            int x = Math.min(config.margin, Math.max(0, screenWidth - panel.width()));
+            fillRounded(
+                    context,
+                    x,
+                    y,
+                    panel.width(),
+                    panel.height(),
+                    8,
+                    alphaColor(config.backgroundOpacity, BACKGROUND_RGB)
+            );
+            int rowY = y + PANEL_PADDING;
+            for (RenderRow row : panel.rows()) {
+                context.drawText(textRenderer, row.text(), x + PANEL_PADDING + row.indent(), rowY, 0xFFFFFFFF, true);
+                rowY += LINE_HEIGHT;
+            }
+            y += panel.height() + PANEL_GAP;
+        }
+    }
+
+    private List<HudLine> linesFor(DataEnvelope envelope) {
+        RapidsConfig.TopicSettings settings = config.topic(envelope.topic());
+        if (settings != null && !settings.template.isBlank()) {
+            return templateFormatter.format(settings.template, envelope.data());
+        }
+
+        ArrayList<HudLine> lines = new ArrayList<>();
+        lines.add(new HudLine(0, List.of(
+                new MinecraftColorParser.Segment("◆ ", ACCENT),
+                new MinecraftColorParser.Segment(envelope.topic(), TITLE)
+        )));
+        for (HudLine line : jsonFormatter.format(envelope.data())) {
+            lines.add(new HudLine(line.depth() + 1, line.spans()));
+        }
+        return List.copyOf(lines);
+    }
+
+    private RenderPanel layoutPanel(TextRenderer renderer, List<HudLine> logicalLines, int panelMaxWidth, int availableHeight) {
+        int contentMaxWidth = Math.max(20, panelMaxWidth - PANEL_PADDING * 2);
+        int maxRows = Math.max(1, (availableHeight - PANEL_PADDING * 2) / LINE_HEIGHT);
+        ArrayList<RenderRow> rows = new ArrayList<>();
+        boolean truncated = false;
+
+        for (HudLine logical : logicalLines) {
+            int indent = Math.min(INDENT_WIDTH * logical.depth(), Math.max(0, contentMaxWidth / 2));
+            Text text = styledText(logical.spans());
+            List<OrderedText> wrapped = renderer.wrapLines(text, Math.max(20, contentMaxWidth - indent));
+            if (wrapped.isEmpty()) {
+                wrapped = List.of(Text.empty().asOrderedText());
+            }
+            int wrapCount = Math.min(3, wrapped.size());
+            for (int index = 0; index < wrapCount; index++) {
                 if (rows.size() >= maxRows) {
+                    truncated = true;
                     break;
                 }
+                rows.add(new RenderRow(indent, wrapped.get(index)));
             }
-            if (truncated || rows.size() >= maxRows) {
-                truncated = true;
+            if (truncated) {
                 break;
             }
         }
@@ -125,25 +141,42 @@ public final class RapidsHudRenderer {
             if (rows.size() >= maxRows) {
                 rows.removeLast();
             }
-            rows.add(new RenderRow(INDENT_WIDTH, 0, Text.literal("More data…").styled(style -> style.withColor(META)).asOrderedText()));
+            rows.add(new RenderRow(INDENT_WIDTH, Text.literal("More data…")
+                    .styled(style -> style.withColor(META))
+                    .asOrderedText()));
         }
-        return List.copyOf(rows);
+
+        int contentWidth = rows.stream()
+                .mapToInt(row -> row.indent() + renderer.getWidth(row.text()))
+                .max()
+                .orElse(0);
+        int panelWidth = Math.min(
+                panelMaxWidth,
+                Math.max(Math.min(MIN_PANEL_WIDTH, panelMaxWidth), contentWidth + PANEL_PADDING * 2)
+        );
+        int panelHeight = PANEL_PADDING * 2 + rows.size() * LINE_HEIGHT;
+        return new RenderPanel(panelWidth, panelHeight, List.copyOf(rows));
     }
 
-    private static Text styledText(List<MinecraftColorParser.Segment> spans, boolean bold) {
+    private static Text styledText(List<MinecraftColorParser.Segment> spans) {
         MutableText text = Text.empty();
         for (MinecraftColorParser.Segment span : spans) {
-            text.append(Text.literal(span.text()).styled(style -> style.withColor(span.color()).withBold(bold)));
+            text.append(Text.literal(span.text()).styled(style -> style.withColor(span.color())));
         }
         return text;
     }
 
     private static void fillRounded(DrawContext context, int x, int y, int width, int height, int radius, int color) {
-        int inset = Math.min(radius, Math.min(width / 2, height / 2));
-        context.fill(x + inset, y, x + width - inset, y + height, color);
-        context.fill(x + 3, y + 1, x + width - 3, y + height - 1, color);
-        context.fill(x + 1, y + 3, x + width - 1, y + height - 3, color);
-        context.fill(x, y + inset, x + width, y + height - inset, color);
+        int actualRadius = Math.min(radius, Math.min(width / 2, height / 2));
+        for (int row = 0; row < height; row++) {
+            int distanceFromEdge = Math.min(row, height - row - 1);
+            int inset = 0;
+            if (distanceFromEdge < actualRadius) {
+                double vertical = actualRadius - distanceFromEdge - 0.5D;
+                inset = (int) Math.ceil(actualRadius - Math.sqrt(actualRadius * actualRadius - vertical * vertical));
+            }
+            context.fill(x + inset, y + row, x + width - inset, y + row + 1, color);
+        }
     }
 
     private static int alphaColor(float opacity, int rgb) {
@@ -151,9 +184,9 @@ public final class RapidsHudRenderer {
         return (alpha << 24) | (rgb & 0xFFFFFF);
     }
 
-    private record RenderRow(int indent, int gapBefore, OrderedText text) {
-        private int height() {
-            return LINE_HEIGHT + gapBefore;
-        }
+    private record RenderRow(int indent, OrderedText text) {
+    }
+
+    private record RenderPanel(int width, int height, List<RenderRow> rows) {
     }
 }
