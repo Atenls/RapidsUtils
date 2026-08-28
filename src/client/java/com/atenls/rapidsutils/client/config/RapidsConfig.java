@@ -24,13 +24,13 @@ public final class RapidsConfig {
             {rhombus} {dungeonDisplay}
                &#999999特殊掉落 &#80b0d0{itemgot}/{itemgotmax}
                &#999999材料掉落 &#80b0d0{dropsgot}/{dropsgotmax}
-               &#999999药剂掉落 &#80b0d0{healingPotionGot}/{healingPotionGotMax}""";
+               &#999999药剂掉落 &#80b0d0{healingPotionGot}/{healingPotionGotMax}{essenceDisplay}{finalDisplay}{extraData}""";
     public static final String MASTERY_TEMPLATE =
-            "{rhombus} &#8098b8天赋状态{lootinstinctDisplay}{chestmagnetDisplay}{rarelootDisplay}";
+            "{rhombus} &#8098b8天赋状态{lootinstinctDisplay}{chestmagnetDisplay}{rarelootDisplay}{extraData}";
     public static final String RELOAD_TEMPLATE =
-            "{reload}";
+            "{reload}{extraData}";
     public static final String UPDATE_TEMPLATE =
-            "{rhombus} &#8098b8Mod 已有可用更新! {version} \n 前往 wiki.dp4.us/#/rapids/updatelogs 查看更新日志并获取新 Mod !";
+            "{rhombus} &#8098b8Mod 已有可用更新! {version} \n 前往 wiki.dp4.us/#/rapids/updatelogs 查看更新日志并获取新 Mod !{extraData}";
 
     private static RapidsConfig loaded;
 
