@@ -118,6 +118,7 @@ public final class RapidsConfig {
         defaults.put("dungeon", new TopicSettings(DEFAULT_DISPLAY_SECONDS, DUNGEON_TEMPLATE));
         defaults.put("mastery", new TopicSettings(DEFAULT_DISPLAY_SECONDS, MASTERY_TEMPLATE));
         defaults.put("update", new TopicSettings(60.0D, UPDATE_TEMPLATE));
+        defaults.put("reload", new TopicSettings(60.0D, RELOAD_TEMPLATE));
         return defaults;
     }
 
