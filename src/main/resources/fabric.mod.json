@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "rapidsutils",
+  "version": "${version}",
+  "name": "RapidsUtils",
+  "description": "Client HUD for Rapids GuoScript data payloads. Updated 2026-08-28.",
+  "authors": [
+    "Atenls"
+  ],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.atenls.rapidsutils.client.RapidsUtilsClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.4",
+    "minecraft": "1.21.11",
+    "fabric-api": ">=0.141.6+1.21.11",
+    "java": ">=21"
+  }
+}
