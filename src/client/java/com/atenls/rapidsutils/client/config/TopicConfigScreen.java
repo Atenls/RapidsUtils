@@ -20,7 +20,9 @@ public final class TopicConfigScreen extends Screen {
     private final String originalTopic;
     private String initialTemplate;
     private double displaySeconds;
+    private int topicIndex;
     private TextFieldWidget topicField;
+    private TextFieldWidget indexField;
     private EditBoxWidget templateEditor;
     private String error = "";
 
@@ -31,6 +33,7 @@ public final class TopicConfigScreen extends Screen {
         this.originalTopic = topic;
         RapidsConfig.TopicSettings settings = topic == null ? null : config.topic(topic);
         this.displaySeconds = settings == null ? RapidsConfig.DEFAULT_DISPLAY_SECONDS : settings.displaySeconds;
+        this.topicIndex = settings == null ? RapidsConfig.DEFAULT_TOPIC_INDEX : settings.index;
         this.initialTemplate = settings == null ? "" : settings.template;
     }
 
@@ -47,7 +50,13 @@ public final class TopicConfigScreen extends Screen {
 
         addDrawableChild(new DurationSlider(controlX, 76, controlWidth, secondsToSlider(displaySeconds)));
 
-        int editorY = 124;
+        indexField = new TextFieldWidget(textRenderer, controlX, 108, controlWidth, CONTROL_HEIGHT, Text.literal("排序索引"));
+        indexField.setMaxLength(11);
+        indexField.setText(Integer.toString(topicIndex));
+        indexField.setPlaceholder(Text.literal("10"));
+        addDrawableChild(indexField);
+
+        int editorY = 151;
         int bottomY = height - 27;
         int editorHeight = Math.max(50, bottomY - editorY - 10);
         templateEditor = EditBoxWidget.builder()
@@ -79,16 +88,11 @@ public final class TopicConfigScreen extends Screen {
         int labelX = (width - Math.min(380, width - 40)) / 2;
         context.drawCenteredTextWithShadow(textRenderer, title, width / 2, 14, 0xFFFFFFFF);
         context.drawTextWithShadow(textRenderer, Text.literal("主题 ID"), labelX, 35, 0xFFB8C0CC);
-        context.drawTextWithShadow(
-                textRenderer,
-                Text.literal("模板 · {rhombus}、{dataKey}、嵌套 {key.child}、RGB &#rrggbb"),
-                labelX,
-                108,
-                0xFF8F99A6
-        );
-        if (!error.isEmpty()) {
-            context.drawCenteredTextWithShadow(textRenderer, Text.literal(error), width / 2, 96, 0xFFFF5555);
-        }
+        context.drawTextWithShadow(textRenderer, Text.literal("排序索引（服务端 index 为空时）"), labelX, 96, 0xFFB8C0CC);
+        Text hint = error.isEmpty()
+                ? Text.literal("模板 · {rhombus}、{dataKey}、嵌套 {key.child}、RGB &#rrggbb")
+                : Text.literal(error);
+        context.drawTextWithShadow(textRenderer, hint, labelX, 136, error.isEmpty() ? 0xFF8F99A6 : 0xFFFF5555);
     }
 
     private void saveAndClose() {
@@ -105,11 +109,17 @@ public final class TopicConfigScreen extends Screen {
             error = "该主题已存在";
             return;
         }
+        try {
+            topicIndex = Integer.parseInt(indexField.getText().trim());
+        } catch (NumberFormatException e) {
+            error = "排序索引必须是整数";
+            return;
+        }
 
         if (originalTopic != null && !originalTopic.equals(topic)) {
             config.removeTopic(originalTopic);
         }
-        config.putTopic(topic, new RapidsConfig.TopicSettings(displaySeconds, templateEditor.getText()));
+        config.putTopic(topic, new RapidsConfig.TopicSettings(displaySeconds, topicIndex, templateEditor.getText()));
         config.save();
         close();
     }
@@ -118,6 +128,7 @@ public final class TopicConfigScreen extends Screen {
         String topic = topicField.getText().trim();
         RapidsConfig.TopicSettings defaults = RapidsConfig.defaultTopic(topic);
         displaySeconds = defaults.displaySeconds;
+        topicIndex = defaults.index;
         initialTemplate = defaults.template;
         clearAndInit();
     }

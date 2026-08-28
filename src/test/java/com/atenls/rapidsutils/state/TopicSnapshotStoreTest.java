@@ -25,7 +25,7 @@ class TopicSnapshotStoreTest {
         clock.set(1_500L);
         assertEquals(TopicSnapshotStore.UpdateResult.ACCEPTED, store.apply(envelope("dungeon", 9)));
 
-        assertEquals(java.util.List.of("dungeon", "boss"), store.snapshot().orderedForHud().stream()
+        assertEquals(java.util.List.of("dungeon", "boss"), store.snapshot().orderedForHud(topic -> 10).stream()
                 .map(snapshot -> snapshot.envelope().topic())
                 .toList());
         assertEquals(9, store.snapshot().topics().get("dungeon").envelope().sequence());
@@ -90,21 +90,26 @@ class TopicSnapshotStoreTest {
     }
 
     @Test
-    void numericIndexSortsAroundStableDefaultIndexTen() {
+    void numericIndexOverridesPerTopicFallbackOrdering() {
         TopicSnapshotStore store = new TopicSnapshotStore(() -> 0L);
         store.apply(envelope("fallback-a", 1, NULL, NULL));
         store.apply(envelope("high", 1, NULL, number("20")));
         store.apply(envelope("fallback-b", 1, NULL, NULL));
-        store.apply(envelope("low", 1, NULL, number("5")));
+        store.apply(envelope("low", 1, NULL, number("1")));
         store.apply(envelope("fallback-text", 1, NULL,
                 new PayloadData.ScalarValue(PayloadData.ScalarKind.STRING, "later")));
         store.apply(envelope("exact-ten", 1, NULL, number("10")));
         store.apply(envelope("fallback-a", 2, NULL, NULL));
 
         assertEquals(java.util.List.of(
-                        "low", "fallback-a", "fallback-b", "fallback-text", "exact-ten", "high"
+                        "low", "fallback-b", "fallback-text", "fallback-a", "exact-ten", "high"
                 ),
-                store.snapshot().orderedForHud().stream()
+                store.snapshot().orderedForHud(topic -> switch (topic) {
+                    case "fallback-b" -> 5;
+                    case "fallback-text" -> 7;
+                    case "fallback-a" -> 8;
+                    default -> 10;
+                }).stream()
                         .map(snapshot -> snapshot.envelope().topic())
                         .toList());
     }

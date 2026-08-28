@@ -58,7 +58,7 @@ public final class RapidsHudRenderer {
         int panelMaxWidth = Math.min(config.maxWidth, availableWidth);
         int y = config.margin;
         long currentTick = store.currentTick();
-        for (TopicSnapshot snapshot : store.snapshot().orderedForHud()) {
+        for (TopicSnapshot snapshot : store.snapshot().orderedForHud(config::index)) {
             DataEnvelope envelope = snapshot.envelope();
             BigDecimal fallbackDurationTicks = BigDecimal.valueOf(config.displaySeconds(envelope.topic()))
                     .multiply(BigDecimal.valueOf(20L));

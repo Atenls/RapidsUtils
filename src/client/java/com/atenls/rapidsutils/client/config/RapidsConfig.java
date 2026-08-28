@@ -19,6 +19,7 @@ public final class RapidsConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path PATH = FabricLoader.getInstance().getConfigDir().resolve("rapidsutils.json");
     public static final double DEFAULT_DISPLAY_SECONDS = 3.0D;
+    public static final int DEFAULT_TOPIC_INDEX = 10;
     public static final String DUNGEON_TEMPLATE = """
             {rhombus} {dungeonDisplay}
                &#999999特殊掉落 &#80b0d0{itemgot}/{itemgotmax}
@@ -90,6 +91,11 @@ public final class RapidsConfig {
         return settings == null ? DEFAULT_DISPLAY_SECONDS : settings.displaySeconds;
     }
 
+    public int index(String topic) {
+        TopicSettings settings = topic(topic);
+        return settings == null ? DEFAULT_TOPIC_INDEX : settings.index;
+    }
+
     public void putTopic(String name, TopicSettings settings) {
         topics.put(name, settings);
         sanitize();
@@ -109,39 +115,48 @@ public final class RapidsConfig {
             topics = new LinkedHashMap<>(topics);
         }
         topics.entrySet().removeIf(entry -> entry.getKey() == null || entry.getKey().isBlank() || entry.getValue() == null);
-        topics.values().forEach(TopicSettings::sanitize);
-        defaultTopics().forEach(topics::putIfAbsent);
+        Map<String, TopicSettings> defaults = defaultTopics();
+        topics.forEach((topic, settings) -> {
+            TopicSettings defaultSettings = defaults.get(topic);
+            settings.sanitize(defaultSettings == null ? DEFAULT_TOPIC_INDEX : defaultSettings.index);
+        });
+        defaults.forEach(topics::putIfAbsent);
     }
 
     private static Map<String, TopicSettings> defaultTopics() {
         LinkedHashMap<String, TopicSettings> defaults = new LinkedHashMap<>();
-        defaults.put("dungeon", new TopicSettings(DEFAULT_DISPLAY_SECONDS, DUNGEON_TEMPLATE));
-        defaults.put("mastery", new TopicSettings(DEFAULT_DISPLAY_SECONDS, MASTERY_TEMPLATE));
-        defaults.put("update", new TopicSettings(60.0D, UPDATE_TEMPLATE));
-        defaults.put("reload", new TopicSettings(60.0D, RELOAD_TEMPLATE));
+        defaults.put("dungeon", new TopicSettings(DEFAULT_DISPLAY_SECONDS, 8, DUNGEON_TEMPLATE));
+        defaults.put("mastery", new TopicSettings(DEFAULT_DISPLAY_SECONDS, 5, MASTERY_TEMPLATE));
+        defaults.put("update", new TopicSettings(60.0D, 20, UPDATE_TEMPLATE));
+        defaults.put("reload", new TopicSettings(60.0D, 1, RELOAD_TEMPLATE));
         return defaults;
     }
 
     public static TopicSettings defaultTopic(String topic) {
         TopicSettings settings = defaultTopics().get(topic);
-        return settings == null ? new TopicSettings(DEFAULT_DISPLAY_SECONDS, "") : settings;
+        return settings == null ? new TopicSettings(DEFAULT_DISPLAY_SECONDS, DEFAULT_TOPIC_INDEX, "") : settings;
     }
 
     public static final class TopicSettings {
         public double displaySeconds = DEFAULT_DISPLAY_SECONDS;
+        public Integer index;
         public String template = "";
 
         public TopicSettings() {
         }
 
-        public TopicSettings(double displaySeconds, String template) {
+        public TopicSettings(double displaySeconds, int index, String template) {
             this.displaySeconds = displaySeconds;
+            this.index = index;
             this.template = template;
-            sanitize();
+            sanitize(index);
         }
 
-        private void sanitize() {
+        private void sanitize(int fallbackIndex) {
             displaySeconds = Math.max(0.5D, Math.min(600.0D, displaySeconds));
+            if (index == null) {
+                index = fallbackIndex;
+            }
             if (template == null) {
                 template = "";
             } else if (template.length() > 8192) {
