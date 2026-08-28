@@ -16,6 +16,8 @@ import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public final class RapidsUtilsClient implements ClientModInitializer {
     public static final String MOD_ID = "rapidsutils";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
@@ -23,7 +25,9 @@ public final class RapidsUtilsClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         RapidsConfig config = RapidsConfig.load();
-        TopicSnapshotStore store = new TopicSnapshotStore();
+        AtomicLong clientTicks = new AtomicLong();
+        TopicSnapshotStore store = new TopicSnapshotStore(clientTicks::get);
+        ClientTickEvents.END_CLIENT_TICK.register(client -> clientTicks.incrementAndGet());
         RapidsDataReceiver.register(store);
         registerKeyBindings(config);
         RapidsHudRenderer renderer = new RapidsHudRenderer(store, config);

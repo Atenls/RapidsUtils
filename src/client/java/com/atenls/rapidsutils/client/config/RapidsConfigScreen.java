@@ -88,7 +88,7 @@ public final class RapidsConfigScreen extends Screen {
         for (int index = start; index < end; index++) {
             String topic = topicNames.get(index);
             RapidsConfig.TopicSettings settings = config.topic(topic);
-            Text message = Text.literal(String.format(Locale.ROOT, "%s  ·  %.1f 秒", topic, settings.displaySeconds));
+            Text message = Text.literal(String.format(Locale.ROOT, "%s  ·  回退 %.1f 秒", topic, settings.displaySeconds));
             int rowY = topicsY + (index - start) * 22;
             addDrawableChild(ButtonWidget.builder(message, button -> openTopic(topic))
                     .dimensions(controlX, rowY, CONTROL_WIDTH, CONTROL_HEIGHT)

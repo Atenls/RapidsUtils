@@ -40,12 +40,15 @@ public final class DataEnvelopeParser {
             if (version == null || version != DataEnvelope.CURRENT_VERSION
                     || sequence == null || sequence < 0
                     || topic == null || topic.isBlank() || topic.length() > MAX_TOPIC_LENGTH
-                    || !Boolean.TRUE.equals(full) || !root.has("data")) {
+                    || !Boolean.TRUE.equals(full)
+                    || !root.has("duration") || !root.has("index") || !root.has("data")) {
                 return Optional.empty();
             }
 
+            PayloadData duration = convert(root.get("duration"), 0);
+            PayloadData index = convert(root.get("index"), 0);
             PayloadData data = convert(root.get("data"), 0);
-            return Optional.of(new DataEnvelope(version, topic, sequence, true, data));
+            return Optional.of(new DataEnvelope(version, topic, sequence, true, duration, index, data));
         } catch (JsonParseException | ArithmeticException | IllegalStateException | ClassCastException e) {
             return Optional.empty();
         }

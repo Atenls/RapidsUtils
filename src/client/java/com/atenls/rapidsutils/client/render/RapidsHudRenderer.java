@@ -16,6 +16,7 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,11 +57,12 @@ public final class RapidsHudRenderer {
 
         int panelMaxWidth = Math.min(config.maxWidth, availableWidth);
         int y = config.margin;
-        long now = System.currentTimeMillis();
-        for (TopicSnapshot snapshot : store.snapshot().newestFirst()) {
+        long currentTick = store.currentTick();
+        for (TopicSnapshot snapshot : store.snapshot().orderedForHud()) {
             DataEnvelope envelope = snapshot.envelope();
-            long visibleMillis = Math.round(config.displaySeconds(envelope.topic()) * 1000.0D);
-            if (!snapshot.isVisibleAt(now, visibleMillis)) {
+            BigDecimal fallbackDurationTicks = BigDecimal.valueOf(config.displaySeconds(envelope.topic()))
+                    .multiply(BigDecimal.valueOf(20L));
+            if (!snapshot.isVisibleAt(currentTick, fallbackDurationTicks)) {
                 continue;
             }
 

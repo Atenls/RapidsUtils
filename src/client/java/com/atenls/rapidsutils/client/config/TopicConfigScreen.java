@@ -130,7 +130,7 @@ public final class TopicConfigScreen extends Screen {
     }
 
     private Text durationMessage() {
-        return Text.literal(String.format(Locale.ROOT, "接收后显示：%.1f 秒", displaySeconds));
+        return Text.literal(String.format(Locale.ROOT, "duration 为空时显示：%.1f 秒", displaySeconds));
     }
 
     private static double sliderToSeconds(double value) {

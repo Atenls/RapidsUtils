@@ -23,6 +23,8 @@ The complete plugin message body is one UTF-8 JSON document:
   "topic": "dungeon",
   "sequence": 42,
   "full": true,
+  "duration": 60,
+  "index": 5,
   "data": {
     "floor": "§bFrozen Vault",
     "wave": 3,
@@ -35,13 +37,15 @@ The complete plugin message body is one UTF-8 JSON document:
 - `topic` identifies an independently displayed data group.
 - `sequence` must increase within a topic. Duplicate or older snapshots are ignored.
 - `full` must currently be `true`.
-- `data` may be any JSON object, array, string, number, boolean, or null.
+- `duration` and `index` are preserved as immutable JSON values. A numeric `duration` is the HUD lifetime in client ticks. `null` falls back to the topic's client-side `displaySeconds`; `-1` keeps the topic visible until it is replaced, removed, or the connection is cleared. Other non-numeric values use the same fallback behavior as `null`.
+- A numeric `index` orders HUD panels from lowest to highest. `null` and other non-numeric values default to `10`; equal indexes retain the topics' stable first-seen order.
+- `data` may be any JSON object, array, string, number, boolean, or null. `null` and an empty object `{}` are removal messages for that topic. Their sequence is retained, so an older packet cannot restore removed data.
 
 Malformed messages, unsupported versions, partial updates, and stale sequences are ignored. Topic state is cleared when the client disconnects. Legacy Minecraft colors (`§0`-`§f`), `§r`, and `§x§R§R§G§G§B§B` colors in string values are displayed directly. Templates also support RGB colors in the form `&#rrggbb`; legacy ampersand colors such as `&a` and gradient syntax are not parsed.
 
 ## HUD and configuration
 
-The HUD starts at a configurable scaled-screen margin of 5 pixels by default, follows the normal F1 HUD visibility condition, and computes each topic panel independently from its visible content. Press `H` in game to toggle the HUD; the key can be rebound in Minecraft's Controls screen and the new state is saved immediately. A topic is shown for three seconds after its latest accepted snapshot by default. Its duration and template can be configured together. Topics without a configured template use the generic recursive JSON display.
+The HUD starts at a configurable scaled-screen margin of 5 pixels by default, follows the normal F1 HUD visibility condition, and computes each topic panel independently from its visible content. Press `H` in game to toggle the HUD; the key can be rebound in Minecraft's Controls screen and the new state is saved immediately. When the server sends `duration: null`, a topic is shown for its configured `displaySeconds` (three seconds by default). A numeric server duration overrides that fallback and is measured in client ticks. Topics without a configured template use the generic recursive JSON display.
 
 Rounded backgrounds are drawn as non-overlapping horizontal spans, so translucent pixels are blended only once. Nested data, collection length, string length, wrapping, and screen height are bounded to keep the display readable.
 
@@ -65,10 +69,16 @@ On first launch the mod creates `config/rapidsutils.json`:
     "update": {
       "displaySeconds": 60.0,
       "template": "{rhombus} &#8098b8Mod 已有可用更新! {version} \n 前往 wiki.dp4.us/#/rapids/updatelogs 查看更新日志并获取新 Mod !"
+    },
+    "reload": {
+      "displaySeconds": 60.0,
+      "template": "{reload}"
     }
   }
 }
 ```
+
+GuoScript sends this shape from `sendClientData(player, topic, data, duration, index)` and `broadcastClientData(topic, data, duration, index)`. All seven outer keys are required. Legacy three-argument calls still send the same shape with `duration` and `index` set to `null`.
 
 Template variables use `{variable}` syntax. `{rhombus}` is built in and renders `◆`. Every top-level `data` key is available directly, such as `{dungeonDisplay}`; nested object values can also be addressed as `{parent.child}`. Unknown variables remain visible in the HUD so configuration mistakes can be found easily.
 
