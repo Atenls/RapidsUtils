@@ -84,7 +84,7 @@ On first launch the mod creates `config/rapidsutils.json`:
 }
 ```
 
-Template variables use `{variable}` syntax. `{rhombus}` is built in and renders `◆`. Every top-level `data` key is available directly, such as `{dungeonDisplay}`; nested object values can also be addressed as `{parent.child}`. Unknown variables remain visible in the HUD so configuration mistakes can be found easily.
+Template variables use `{variable}` syntax. `{rhombus}` is built in and renders `◆`. Every top-level `data` key is available directly, such as `{dungeonDisplay}`; nested object values can also be addressed as `{parent.child}`. Variables that are not present in the received `data` are replaced with an empty string.
 
 No configuration library is required. If optional Mod Menu 17.0.0 is installed, open RapidsUtils from the Mods screen to edit global HUD options, open a topic to edit its fallback display duration, fallback sort index, and multiline template together, or use **Add topic** to create another client-side topic definition. The JSON file remains directly editable without Mod Menu.
 

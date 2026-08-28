@@ -36,7 +36,7 @@ public final class TopicTemplateFormatter {
         StringBuilder result = new StringBuilder();
         while (matcher.find()) {
             String replacement = variables.get(matcher.group(1));
-            matcher.appendReplacement(result, Matcher.quoteReplacement(replacement == null ? matcher.group() : replacement));
+            matcher.appendReplacement(result, Matcher.quoteReplacement(replacement == null ? "" : replacement));
         }
         matcher.appendTail(result);
         return result.toString();

@@ -31,12 +31,12 @@ class TopicTemplateFormatterTest {
     }
 
     @Test
-    void leavesUnknownVariablesVisibleForConfigurationFeedback() {
+    void replacesMissingVariablesWithEmptyStrings() {
         PayloadData data = new PayloadData.ObjectValue(Map.of());
 
-        List<HudLine> lines = new TopicTemplateFormatter().format("{missing}", data);
+        List<HudLine> lines = new TopicTemplateFormatter().format("Before{missing}After", data);
 
-        assertEquals("{missing}", joined(lines.getFirst()));
+        assertEquals("BeforeAfter", joined(lines.getFirst()));
     }
 
     private static String joined(HudLine line) {
