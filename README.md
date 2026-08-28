@@ -7,8 +7,8 @@ The receiver is registered before the client connects. Fabric advertises the reg
 ## Requirements
 
 - Minecraft 1.21.11
-- Fabric Loader 0.19.4 or newer
-- Fabric API 0.141.6+1.21.11 or newer
+- Fabric Loader 0.19.3 or newer
+- Fabric API 0.141.4+1.21.11 or newer
 - Java 21
 
 The server does not need Fabric or this mod. It only needs to send the documented Bukkit plugin message payload.
