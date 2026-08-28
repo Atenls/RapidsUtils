@@ -43,7 +43,7 @@ class TopicSnapshotStoreTest {
     }
 
     @Test
-    void clearAllowsANewConnectionToRestartSequences() {
+    void clearAllowsAWorldOrConnectionChangeToRestartSequences() {
         TopicSnapshotStore store = new TopicSnapshotStore(() -> 0L);
         store.apply(envelope("boss", 10));
         store.clear();

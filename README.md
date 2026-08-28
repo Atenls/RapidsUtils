@@ -43,7 +43,7 @@ GuoScript sends this shape from `sendClientData(player, topic, data, duration, i
 - A numeric `index` orders HUD panels from lowest to highest. `null` and other non-numeric values fall back to the topic's client-side `index`; custom topics default to `10`. Equal indexes retain the topics' stable first-seen order.
 - `data` may be any JSON object, array, string, number, boolean, or null. `null` and an empty object `{}` are removal messages for that topic. Their sequence is retained, so an older packet cannot restore removed data.
 
-Malformed messages, unsupported versions, partial updates, and stale sequences are ignored. Topic state is cleared when the client disconnects. Legacy Minecraft colors (`§0`-`§f`), `§r`, and `§x§R§R§G§G§B§B` colors in string values are displayed directly. Templates also support RGB colors in the form `&#rrggbb`; legacy ampersand colors such as `&a` and gradient syntax are not parsed.
+Malformed messages, unsupported versions, partial updates, and stale sequences are ignored. Topic snapshots and sequence baselines are cleared when the client world changes or the connection closes. Clearing on a world change allows a Velocity/Bungee-style backend switch to accept the new server's sequence range even though the client remains connected to the proxy. Legacy Minecraft colors (`§0`-`§f`), `§r`, and `§x§R§R§G§G§B§B` colors in string values are displayed directly. Templates also support RGB colors in the form `&#rrggbb`; legacy ampersand colors such as `&a` and gradient syntax are not parsed.
 
 ## HUD and configuration
 
