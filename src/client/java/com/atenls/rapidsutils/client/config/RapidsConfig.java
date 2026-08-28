@@ -26,6 +26,8 @@ public final class RapidsConfig {
                &#999999药剂掉落 &#80b0d0{healingPotionGot}/{healingPotionGotMax}""";
     public static final String MASTERY_TEMPLATE =
             "{rhombus} &#8098b8天赋状态{lootinstinctDisplay}{chestmagnetDisplay}{rarelootDisplay}";
+    public static final String RELOAD_TEMPLATE =
+            "{reload}";
     public static final String UPDATE_TEMPLATE =
             "{rhombus} &#8098b8Mod 已有可用更新! {version} \n 前往 wiki.dp4.us/#/rapids/updatelogs 查看更新日志并获取新 Mod !";
 
