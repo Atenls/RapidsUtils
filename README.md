@@ -37,11 +37,13 @@ The complete plugin message body is one UTF-8 JSON document:
 - `full` must currently be `true`.
 - `data` may be any JSON object, array, string, number, boolean, or null.
 
-Malformed messages, unsupported versions, partial updates, and stale sequences are ignored. Topic state is cleared when the client disconnects. Legacy Minecraft colors (`§0`-`§f`), `§r`, and `§x§R§R§G§G§B§B` colors in string values are displayed directly; ampersand colors and custom gradient syntax are intentionally not parsed.
+Malformed messages, unsupported versions, partial updates, and stale sequences are ignored. Topic state is cleared when the client disconnects. Legacy Minecraft colors (`§0`-`§f`), `§r`, and `§x§R§R§G§G§B§B` colors in string values are displayed directly. Templates also support RGB colors in the form `&#rrggbb`; legacy ampersand colors such as `&a` and gradient syntax are not parsed.
 
 ## HUD and configuration
 
-The HUD starts at scaled screen coordinates `8, 8` by default, follows the normal F1 HUD visibility condition, and computes its panel size from the visible content. Nested data, collection length, string length, wrapping, and screen height are bounded to keep the display readable.
+The HUD starts at scaled screen coordinates `8, 8` by default, follows the normal F1 HUD visibility condition, and computes each topic panel independently from its visible content. A topic is shown for three seconds after its latest accepted snapshot by default. Its duration and template can be configured together. Topics without a configured template use the generic recursive JSON display.
+
+Rounded backgrounds are drawn as non-overlapping horizontal spans, so translucent pixels are blended only once. Nested data, collection length, string length, wrapping, and screen height are bounded to keep the display readable.
 
 On first launch the mod creates `config/rapidsutils.json`:
 
@@ -50,11 +52,19 @@ On first launch the mod creates `config/rapidsutils.json`:
   "enabled": true,
   "margin": 8,
   "backgroundOpacity": 0.75,
-  "maxWidth": 300
+  "maxWidth": 300,
+  "topics": {
+    "dungeon": {
+      "displaySeconds": 3.0,
+      "template": "{rhombus} {dungeonDisplay}\n- &#999999材料掉落 &#80b0d0{itemgot}/{itemgotmax}\n- &#999999特殊掉落 &#80b0d0{dropsgot}/{dropsgotmax}\n- &#999999药剂掉落 &#80b0d0{healingPotionGot}/{healingPotionGotMax}"
+    }
+  }
 }
 ```
 
-No configuration library or Mod Menu is required.
+Template variables use `{variable}` syntax. `{rhombus}` is built in and renders `◆`. Every top-level `data` key is available directly, such as `{dungeonDisplay}`; nested object values can also be addressed as `{parent.child}`. Unknown variables remain visible in the HUD so configuration mistakes can be found easily.
+
+No configuration library is required. If optional Mod Menu 17.0.0 is installed, open RapidsUtils from the Mods screen to edit global HUD options, open a topic to edit its display duration and multiline template together, or use **Add topic** to create another client-side topic definition. The JSON file remains directly editable without Mod Menu.
 
 ## Build
 

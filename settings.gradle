@@ -14,6 +14,10 @@ dependencyResolutionManagement {
             name = "Fabric"
             url = "https://maven.fabricmc.net/"
         }
+        maven {
+            name = "Terraformers"
+            url = "https://maven.terraformersmc.com/releases/"
+        }
         mavenCentral()
     }
 }
