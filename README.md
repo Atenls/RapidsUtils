@@ -41,7 +41,7 @@ Malformed messages, unsupported versions, partial updates, and stale sequences a
 
 ## HUD and configuration
 
-The HUD starts at scaled screen coordinates `8, 8` by default, follows the normal F1 HUD visibility condition, and computes each topic panel independently from its visible content. A topic is shown for three seconds after its latest accepted snapshot by default. Its duration and template can be configured together. Topics without a configured template use the generic recursive JSON display.
+The HUD starts at a configurable scaled-screen margin of 5 pixels by default, follows the normal F1 HUD visibility condition, and computes each topic panel independently from its visible content. Press `H` in game to toggle the HUD; the key can be rebound in Minecraft's Controls screen and the new state is saved immediately. A topic is shown for three seconds after its latest accepted snapshot by default. Its duration and template can be configured together. Topics without a configured template use the generic recursive JSON display.
 
 Rounded backgrounds are drawn as non-overlapping horizontal spans, so translucent pixels are blended only once. Nested data, collection length, string length, wrapping, and screen height are bounded to keep the display readable.
 

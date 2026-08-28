@@ -23,7 +23,7 @@ public final class RapidsConfigScreen extends Screen {
     private int topicPage;
 
     public RapidsConfigScreen(Screen parent) {
-        super(Text.literal("RapidsUtils"));
+        super(Text.literal("RapidsUtils 设置"));
         this.parent = parent;
         this.config = RapidsConfig.get();
         this.enabled = config.enabled;
@@ -88,7 +88,7 @@ public final class RapidsConfigScreen extends Screen {
         for (int index = start; index < end; index++) {
             String topic = topicNames.get(index);
             RapidsConfig.TopicSettings settings = config.topic(topic);
-            Text message = Text.literal(String.format(Locale.ROOT, "%s  ·  %.1fs", topic, settings.displaySeconds));
+            Text message = Text.literal(String.format(Locale.ROOT, "%s  ·  %.1f 秒", topic, settings.displaySeconds));
             int rowY = topicsY + (index - start) * 22;
             addDrawableChild(ButtonWidget.builder(message, button -> openTopic(topic))
                     .dimensions(controlX, rowY, CONTROL_WIDTH, CONTROL_HEIGHT)
@@ -101,7 +101,7 @@ public final class RapidsConfigScreen extends Screen {
                 })
                 .dimensions(controlX, navigationY, 42, CONTROL_HEIGHT)
                 .build()).active = topicPage > 0;
-        addDrawableChild(ButtonWidget.builder(Text.literal("Add topic"), button -> openTopic(null))
+        addDrawableChild(ButtonWidget.builder(Text.literal("新增主题"), button -> openTopic(null))
                 .dimensions(controlX + 48, navigationY, CONTROL_WIDTH - 96, CONTROL_HEIGHT)
                 .build());
         addDrawableChild(ButtonWidget.builder(Text.literal(">"), button -> {
@@ -112,10 +112,10 @@ public final class RapidsConfigScreen extends Screen {
                 .build()).active = topicPage + 1 < pageCount;
 
         int bottomY = height - 26;
-        addDrawableChild(ButtonWidget.builder(Text.literal("Save"), button -> saveAndClose())
+        addDrawableChild(ButtonWidget.builder(Text.literal("保存"), button -> saveAndClose())
                 .dimensions(controlX, bottomY, 136, CONTROL_HEIGHT)
                 .build());
-        addDrawableChild(ButtonWidget.builder(Text.literal("Cancel"), button -> close())
+        addDrawableChild(ButtonWidget.builder(Text.literal("取消"), button -> close())
                 .dimensions(controlX + 144, bottomY, 136, CONTROL_HEIGHT)
                 .build());
     }
@@ -124,7 +124,7 @@ public final class RapidsConfigScreen extends Screen {
     public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
         super.render(context, mouseX, mouseY, deltaTicks);
         context.drawCenteredTextWithShadow(textRenderer, title, width / 2, 14, 0xFFFFFFFF);
-        context.drawCenteredTextWithShadow(textRenderer, Text.literal("Topics"), width / 2, 132, 0xFFB8C0CC);
+        context.drawCenteredTextWithShadow(textRenderer, Text.literal("主题"), width / 2, 132, 0xFFB8C0CC);
     }
 
     private void openTopic(String topic) {
@@ -150,19 +150,19 @@ public final class RapidsConfigScreen extends Screen {
     }
 
     private Text enabledMessage() {
-        return Text.literal("HUD: " + (enabled ? "On" : "Off"));
+        return Text.literal("HUD 显示：" + (enabled ? "开启" : "关闭"));
     }
 
     private Text opacityMessage() {
-        return Text.literal("Background opacity: " + Math.round(backgroundOpacity * 100.0F) + "%");
+        return Text.literal("背景不透明度：" + Math.round(backgroundOpacity * 100.0F) + "%");
     }
 
     private Text marginMessage() {
-        return Text.literal("Screen margin: " + margin + "px");
+        return Text.literal("屏幕边距：" + margin + "px");
     }
 
     private Text widthMessage() {
-        return Text.literal("Maximum width: " + maxWidth + "px");
+        return Text.literal("最大宽度：" + maxWidth + "px");
     }
 
     private static float sliderToOpacity(double value) {

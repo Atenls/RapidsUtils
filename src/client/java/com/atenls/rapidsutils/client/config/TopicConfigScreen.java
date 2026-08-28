@@ -25,7 +25,7 @@ public final class TopicConfigScreen extends Screen {
     private String error = "";
 
     public TopicConfigScreen(Screen parent, RapidsConfig config, String topic) {
-        super(Text.literal(topic == null ? "Add topic" : "Edit topic"));
+        super(Text.literal(topic == null ? "新增主题" : "编辑主题"));
         this.parent = parent;
         this.config = config;
         this.originalTopic = topic;
@@ -39,10 +39,10 @@ public final class TopicConfigScreen extends Screen {
         int controlWidth = Math.min(380, width - 40);
         int controlX = (width - controlWidth) / 2;
 
-        topicField = new TextFieldWidget(textRenderer, controlX, 47, controlWidth, CONTROL_HEIGHT, Text.literal("Topic ID"));
+        topicField = new TextFieldWidget(textRenderer, controlX, 47, controlWidth, CONTROL_HEIGHT, Text.literal("主题 ID"));
         topicField.setMaxLength(64);
         topicField.setText(originalTopic == null ? "" : originalTopic);
-        topicField.setPlaceholder(Text.literal("topic name"));
+        topicField.setPlaceholder(Text.literal("主题名称"));
         addDrawableChild(topicField);
 
         addDrawableChild(new DurationSlider(controlX, 76, controlWidth, secondsToSlider(displaySeconds)));
@@ -53,22 +53,22 @@ public final class TopicConfigScreen extends Screen {
         templateEditor = EditBoxWidget.builder()
                 .x(controlX)
                 .y(editorY)
-                .placeholder(Text.literal("Leave empty to show generic JSON"))
+                .placeholder(Text.literal("留空时以通用 JSON 格式显示"))
                 .hasBackground(true)
-                .build(textRenderer, controlWidth, editorHeight, Text.literal("Topic template"));
+                .build(textRenderer, controlWidth, editorHeight, Text.empty());
         templateEditor.setMaxLength(8192);
         templateEditor.setMaxLines(64);
         templateEditor.setText(initialTemplate);
         addDrawableChild(templateEditor);
 
         int buttonWidth = (controlWidth - 16) / 3;
-        addDrawableChild(ButtonWidget.builder(Text.literal("Save"), button -> saveAndClose())
+        addDrawableChild(ButtonWidget.builder(Text.literal("保存"), button -> saveAndClose())
                 .dimensions(controlX, bottomY, buttonWidth, CONTROL_HEIGHT)
                 .build());
-        addDrawableChild(ButtonWidget.builder(Text.literal("Reset"), button -> resetTemplate())
+        addDrawableChild(ButtonWidget.builder(Text.literal("恢复默认"), button -> resetTemplate())
                 .dimensions(controlX + buttonWidth + 8, bottomY, buttonWidth, CONTROL_HEIGHT)
                 .build());
-        addDrawableChild(ButtonWidget.builder(Text.literal("Cancel"), button -> close())
+        addDrawableChild(ButtonWidget.builder(Text.literal("取消"), button -> close())
                 .dimensions(controlX + (buttonWidth + 8) * 2, bottomY, buttonWidth, CONTROL_HEIGHT)
                 .build());
     }
@@ -78,10 +78,10 @@ public final class TopicConfigScreen extends Screen {
         super.render(context, mouseX, mouseY, deltaTicks);
         int labelX = (width - Math.min(380, width - 40)) / 2;
         context.drawCenteredTextWithShadow(textRenderer, title, width / 2, 14, 0xFFFFFFFF);
-        context.drawTextWithShadow(textRenderer, Text.literal("Topic ID"), labelX, 35, 0xFFB8C0CC);
+        context.drawTextWithShadow(textRenderer, Text.literal("主题 ID"), labelX, 35, 0xFFB8C0CC);
         context.drawTextWithShadow(
                 textRenderer,
-                Text.literal("Template · {rhombus}, {dataKey}, nested {key.child}, RGB &#rrggbb"),
+                Text.literal("模板 · {rhombus}、{dataKey}、嵌套 {key.child}、RGB &#rrggbb"),
                 labelX,
                 108,
                 0xFF8F99A6
@@ -94,15 +94,15 @@ public final class TopicConfigScreen extends Screen {
     private void saveAndClose() {
         String topic = topicField.getText().trim();
         if (topic.isEmpty()) {
-            error = "Topic ID cannot be empty";
+            error = "主题 ID 不能为空";
             return;
         }
         if (topic.length() > 64) {
-            error = "Topic ID is too long";
+            error = "主题 ID 过长";
             return;
         }
         if (!topic.equals(originalTopic) && config.topics.containsKey(topic)) {
-            error = "That topic already exists";
+            error = "该主题已存在";
             return;
         }
 
@@ -130,7 +130,7 @@ public final class TopicConfigScreen extends Screen {
     }
 
     private Text durationMessage() {
-        return Text.literal(String.format(Locale.ROOT, "Visible after update: %.1fs", displaySeconds));
+        return Text.literal(String.format(Locale.ROOT, "接收后显示：%.1f 秒", displaySeconds));
     }
 
     private static double sliderToSeconds(double value) {
