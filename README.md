@@ -13,7 +13,7 @@ The receiver is registered before the client connects. Fabric advertises the reg
 
 The server does not need Fabric or this mod. It only needs to send the documented Bukkit plugin message payload.
 
-When the server advertises the incoming Plugin Messaging channel `rapidsclientdata:version`, the client sends its mod version once per backend-server join. A Velocity-style switch produces another Game Join without disconnecting the client, so the version is reported again to the new backend. Registration may arrive before or after the world change and Game Join; either order results in one report, while ordinary dimension changes do not trigger another report. The message body is the raw UTF-8 version string, currently `20260901-0430`.
+When the server advertises the incoming Plugin Messaging channel `rapidsclientdata:version`, the client sends its mod version once per backend-server join. A Velocity-style switch produces another Game Join without disconnecting the client, so the version is reported again to the new backend. Registration may arrive before or after the world change and Game Join; either order results in one report, while ordinary dimension changes do not trigger another report. The message body is the raw UTF-8 version string, currently `20260901-0500`.
 
 ## Wire protocol
 
@@ -85,4 +85,4 @@ $env:JAVA_HOME = 'D:\MC\jdk-21.0.10'
 .\gradlew.bat build
 ```
 
-The remapped client mod is written to `build/libs/rapidsutils-20260901-0430.jar`.
+The remapped client mod is written to `build/libs/rapidsutils-20260901-0500.jar`.
