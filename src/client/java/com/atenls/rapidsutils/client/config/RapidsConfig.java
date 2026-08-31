@@ -23,6 +23,8 @@ public final class RapidsConfig {
     public static final double DEFAULT_DISPLAY_SECONDS = 3.0D;
     public static final int DEFAULT_TOPIC_INDEX = 10;
     public static final String DISPLAY_TEMPLATE = "{display}{extraData}";
+    public static final String HIDDEN_TOPIC_TEMPLATE = "{display}";
+    private static final String HIDDEN_TOPIC_PREFIX = "hidden_";
     private static final Set<String> HIDDEN_TOPICS = Set.of("dungeon", "mastery", "update", "reload");
     private static final Map<String, TopicSettings> BUILT_IN_TOPICS = builtInTopics();
 
@@ -109,8 +111,10 @@ public final class RapidsConfig {
         } else if (!(topics instanceof LinkedHashMap)) {
             topics = new LinkedHashMap<>(topics);
         }
-        HIDDEN_TOPICS.forEach(topics::remove);
-        topics.entrySet().removeIf(entry -> entry.getKey() == null || entry.getKey().isBlank() || entry.getValue() == null);
+        topics.entrySet().removeIf(entry -> entry.getKey() == null
+                || entry.getKey().isBlank()
+                || isHiddenTopic(entry.getKey())
+                || entry.getValue() == null);
         topics.forEach((topic, settings) -> {
             settings.sanitize(DEFAULT_TOPIC_INDEX);
         });
@@ -131,11 +135,14 @@ public final class RapidsConfig {
     }
 
     public static boolean isHiddenTopic(String topic) {
-        return HIDDEN_TOPICS.contains(topic);
+        return HIDDEN_TOPICS.contains(topic) || topic.startsWith(HIDDEN_TOPIC_PREFIX);
     }
 
     public static String hiddenTemplate(String topic) {
-        return isHiddenTopic(topic) ? DISPLAY_TEMPLATE : null;
+        if (HIDDEN_TOPICS.contains(topic)) {
+            return DISPLAY_TEMPLATE;
+        }
+        return topic.startsWith(HIDDEN_TOPIC_PREFIX) ? HIDDEN_TOPIC_TEMPLATE : null;
     }
 
     public static final class TopicSettings {

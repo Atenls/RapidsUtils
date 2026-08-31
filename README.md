@@ -55,6 +55,8 @@ Rounded backgrounds are drawn as non-overlapping horizontal spans, so translucen
 
 On first launch the mod creates `config/rapidsutils.json`. The built-in `dungeon`, `mastery`, `update`, and `reload` topics keep their existing fallback durations and indexes, but are hidden from configuration and always render with the hard-coded `{display}{extraData}` template.
 
+Server topics whose IDs start with `hidden_`, such as `hidden_test`, are also hidden from configuration and always render with the hard-coded `{display}` template. Their client fallback duration and index remain the generic 3 seconds and 10 when the server omits those values.
+
 ```json
 {
   "enabled": true,
