@@ -24,7 +24,7 @@ import java.util.Optional;
 public final class RapidsHudRenderer {
     private static final int PANEL_PADDING = 8;
     private static final int PANEL_GAP = 6;
-    private static final int MIN_PANEL_WIDTH = 120;
+    private static final int MIN_PANEL_WIDTH = 80;
     private static final int LINE_HEIGHT = 10;
     private static final int INDENT_WIDTH = 10;
     private static final int BACKGROUND_RGB = 0x050607;
