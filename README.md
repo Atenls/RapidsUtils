@@ -13,6 +13,8 @@ The receiver is registered before the client connects. Fabric advertises the reg
 
 The server does not need Fabric or this mod. It only needs to send the documented Bukkit plugin message payload.
 
+When the server advertises the incoming Plugin Messaging channel `rapidsclientdata:version`, the client sends its mod version once after joining. The message body is the raw UTF-8 version string, currently `20260831-2300`.
+
 ## Wire protocol
 
 The complete plugin message body is one UTF-8 JSON document:
@@ -76,4 +78,4 @@ $env:JAVA_HOME = 'D:\MC\jdk-21.0.10'
 .\gradlew.bat build
 ```
 
-The remapped client mod is written to `build/libs/rapidsutils-1.0.0.jar`.
+The remapped client mod is written to `build/libs/rapidsutils-20260831-2300.jar`.
