@@ -105,6 +105,10 @@ public final class TopicConfigScreen extends Screen {
             error = "主题 ID 过长";
             return;
         }
+        if (RapidsConfig.isHiddenTopic(topic)) {
+            error = "该主题为内置隐藏主题，无法编辑";
+            return;
+        }
         if (!topic.equals(originalTopic) && config.topics.containsKey(topic)) {
             error = "该主题已存在";
             return;

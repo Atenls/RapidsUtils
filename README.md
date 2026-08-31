@@ -51,7 +51,7 @@ The HUD starts at a configurable scaled-screen margin of 5 pixels by default, fo
 
 Rounded backgrounds are drawn as non-overlapping horizontal spans, so translucent pixels are blended only once. Nested data, collection length, string length, wrapping, and screen height are bounded to keep the display readable.
 
-On first launch the mod creates `config/rapidsutils.json`:
+On first launch the mod creates `config/rapidsutils.json`. The built-in `dungeon`, `mastery`, `update`, and `reload` topics keep their existing fallback durations and indexes, but are hidden from configuration and always render with the hard-coded `{display}{extraData}` template.
 
 ```json
 {
@@ -59,28 +59,7 @@ On first launch the mod creates `config/rapidsutils.json`:
   "margin": 5,
   "backgroundOpacity": 0.6,
   "maxWidth": 300,
-  "topics": {
-    "dungeon": {
-      "displaySeconds": 3.0,
-      "index": 8,
-      "template": "{rhombus} {dungeonDisplay}\n   &#999999特殊掉落 &#80b0d0{itemgot}/{itemgotmax}\n   &#999999材料掉落 &#80b0d0{dropsgot}/{dropsgotmax}\n   &#999999药剂掉落 &#80b0d0{healingPotionGot}/{healingPotionGotMax}{essenceDisplay}{finalDisplay}{extraData}"
-    },
-    "mastery": {
-      "displaySeconds": 3.0,
-      "index": 5,
-      "template": "{rhombus} &#8098b8天赋状态{lootinstinctDisplay}{chestmagnetDisplay}{rarelootDisplay}{extraData}"
-    },
-    "update": {
-      "displaySeconds": 60.0,
-      "index": 20,
-      "template": "{rhombus} &#8098b8Mod 已有可用更新! {version} \n 前往 wiki.dp4.us/#/rapids/updatelogs 查看更新日志并获取新 Mod !{extraData}"
-    },
-    "reload": {
-      "displaySeconds": 60.0,
-      "index": 1,
-      "template": "{reload}{extraData}"
-    }
-  }
+  "topics": {}
 }
 ```
 

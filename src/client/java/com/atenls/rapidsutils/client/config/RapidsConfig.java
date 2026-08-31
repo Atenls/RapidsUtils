@@ -12,25 +12,19 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 public final class RapidsConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path PATH = FabricLoader.getInstance().getConfigDir().resolve("rapidsutils.json");
     public static final double DEFAULT_DISPLAY_SECONDS = 3.0D;
     public static final int DEFAULT_TOPIC_INDEX = 10;
-    public static final String DUNGEON_TEMPLATE = """
-            {rhombus} {dungeonDisplay}
-               &#999999特殊掉落 &#80b0d0{itemgot}/{itemgotmax}
-               &#999999材料掉落 &#80b0d0{dropsgot}/{dropsgotmax}
-               &#999999药剂掉落 &#80b0d0{healingPotionGot}/{healingPotionGotMax}{essenceDisplay}{finalDisplay}{extraData}""";
-    public static final String MASTERY_TEMPLATE =
-            "{rhombus} &#8098b8天赋状态{lootinstinctDisplay}{chestmagnetDisplay}{rarelootDisplay}{extraData}";
-    public static final String RELOAD_TEMPLATE =
-            "{reload}{extraData}";
-    public static final String UPDATE_TEMPLATE =
-            "{rhombus} &#8098b8Mod 已有可用更新! {version} \n 前往 wiki.dp4.us/#/rapids/updatelogs 查看更新日志并获取新 Mod !{extraData}";
+    public static final String DISPLAY_TEMPLATE = "{display}{extraData}";
+    private static final Set<String> HIDDEN_TOPICS = Set.of("dungeon", "mastery", "update", "reload");
+    private static final Map<String, TopicSettings> BUILT_IN_TOPICS = builtInTopics();
 
     private static RapidsConfig loaded;
 
@@ -38,7 +32,7 @@ public final class RapidsConfig {
     public int margin = 5;
     public float backgroundOpacity = 0.6F;
     public int maxWidth = 300;
-    public Map<String, TopicSettings> topics = defaultTopics();
+    public Map<String, TopicSettings> topics = new LinkedHashMap<>();
 
     public static RapidsConfig load() {
         if (loaded != null) {
@@ -83,7 +77,8 @@ public final class RapidsConfig {
     }
 
     public TopicSettings topic(String topic) {
-        return topics.get(topic);
+        TopicSettings builtIn = BUILT_IN_TOPICS.get(topic);
+        return builtIn == null ? topics.get(topic) : builtIn;
     }
 
     public double displaySeconds(String topic) {
@@ -114,27 +109,33 @@ public final class RapidsConfig {
         } else if (!(topics instanceof LinkedHashMap)) {
             topics = new LinkedHashMap<>(topics);
         }
+        HIDDEN_TOPICS.forEach(topics::remove);
         topics.entrySet().removeIf(entry -> entry.getKey() == null || entry.getKey().isBlank() || entry.getValue() == null);
-        Map<String, TopicSettings> defaults = defaultTopics();
         topics.forEach((topic, settings) -> {
-            TopicSettings defaultSettings = defaults.get(topic);
-            settings.sanitize(defaultSettings == null ? DEFAULT_TOPIC_INDEX : defaultSettings.index);
+            settings.sanitize(DEFAULT_TOPIC_INDEX);
         });
-        defaults.forEach(topics::putIfAbsent);
     }
 
-    private static Map<String, TopicSettings> defaultTopics() {
+    private static Map<String, TopicSettings> builtInTopics() {
         LinkedHashMap<String, TopicSettings> defaults = new LinkedHashMap<>();
-        defaults.put("dungeon", new TopicSettings(DEFAULT_DISPLAY_SECONDS, 8, DUNGEON_TEMPLATE));
-        defaults.put("mastery", new TopicSettings(DEFAULT_DISPLAY_SECONDS, 5, MASTERY_TEMPLATE));
-        defaults.put("update", new TopicSettings(60.0D, 20, UPDATE_TEMPLATE));
-        defaults.put("reload", new TopicSettings(60.0D, 1, RELOAD_TEMPLATE));
-        return defaults;
+        defaults.put("dungeon", new TopicSettings(DEFAULT_DISPLAY_SECONDS, 8, DISPLAY_TEMPLATE));
+        defaults.put("mastery", new TopicSettings(DEFAULT_DISPLAY_SECONDS, 5, DISPLAY_TEMPLATE));
+        defaults.put("update", new TopicSettings(60.0D, 20, DISPLAY_TEMPLATE));
+        defaults.put("reload", new TopicSettings(60.0D, 1, DISPLAY_TEMPLATE));
+        return Collections.unmodifiableMap(defaults);
     }
 
     public static TopicSettings defaultTopic(String topic) {
-        TopicSettings settings = defaultTopics().get(topic);
+        TopicSettings settings = BUILT_IN_TOPICS.get(topic);
         return settings == null ? new TopicSettings(DEFAULT_DISPLAY_SECONDS, DEFAULT_TOPIC_INDEX, "") : settings;
+    }
+
+    public static boolean isHiddenTopic(String topic) {
+        return HIDDEN_TOPICS.contains(topic);
+    }
+
+    public static String hiddenTemplate(String topic) {
+        return isHiddenTopic(topic) ? DISPLAY_TEMPLATE : null;
     }
 
     public static final class TopicSettings {

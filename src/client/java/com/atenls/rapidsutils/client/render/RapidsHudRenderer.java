@@ -97,6 +97,11 @@ public final class RapidsHudRenderer {
     }
 
     private List<HudLine> linesFor(DataEnvelope envelope) {
+        String hiddenTemplate = RapidsConfig.hiddenTemplate(envelope.topic());
+        if (hiddenTemplate != null) {
+            return templateFormatter.format(hiddenTemplate, envelope.data());
+        }
+
         RapidsConfig.TopicSettings settings = config.topic(envelope.topic());
         if (settings != null && !settings.template.isBlank()) {
             return templateFormatter.format(settings.template, envelope.data());
