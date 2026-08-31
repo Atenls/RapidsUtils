@@ -142,8 +142,7 @@ public final class RapidsHudRenderer {
             if (wrapped.isEmpty()) {
                 wrapped = List.of(Text.empty().asOrderedText());
             }
-            int wrapCount = Math.min(3, wrapped.size());
-            for (int index = 0; index < wrapCount; index++) {
+            for (int index = 0; index < wrapped.size(); index++) {
                 if (rows.size() >= maxRows) {
                     truncated = true;
                     break;

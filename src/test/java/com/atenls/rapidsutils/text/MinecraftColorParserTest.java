@@ -38,13 +38,17 @@ class MinecraftColorParserTest {
     }
 
     @Test
-    void parsesAmpersandRgbWithoutTreatingLegacyAmpersandAsColor() {
+    void parsesAmpersandRgbLegacyFormattingAndResetCodes() {
         List<MinecraftColorParser.Segment> segments = MinecraftColorParser.parse(
-                "&#80b0d0Value &aLiteral",
+                "&#80b0d0Rgb &aGreen &lBold&r reset &zLiteral",
                 0xFFFFFF,
                 100
         );
 
-        assertEquals(List.of(new MinecraftColorParser.Segment("Value &aLiteral", 0x80B0D0)), segments);
+        assertEquals(List.of(
+                new MinecraftColorParser.Segment("Rgb ", 0x80B0D0),
+                new MinecraftColorParser.Segment("Green Bold", 0x55FF55),
+                new MinecraftColorParser.Segment(" reset &zLiteral", 0xFFFFFF)
+        ), segments);
     }
 }

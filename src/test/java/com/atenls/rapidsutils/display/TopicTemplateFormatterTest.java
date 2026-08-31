@@ -39,6 +39,18 @@ class TopicTemplateFormatterTest {
         assertEquals("BeforeAfter", joined(lines.getFirst()));
     }
 
+    @Test
+    void doesNotTruncateLongVariableValues() {
+        String value = "长".repeat(300);
+        PayloadData data = new PayloadData.ObjectValue(Map.of(
+                "content", new PayloadData.ScalarValue(PayloadData.ScalarKind.STRING, value)
+        ));
+
+        List<HudLine> lines = new TopicTemplateFormatter().format("内容：{content}", data);
+
+        assertEquals("内容：" + value, joined(lines.getFirst()));
+    }
+
     private static String joined(HudLine line) {
         return line.spans().stream().map(MinecraftColorParser.Segment::text).reduce("", String::concat);
     }

@@ -12,7 +12,6 @@ import java.util.regex.Pattern;
 
 public final class TopicTemplateFormatter {
     private static final Pattern VARIABLE = Pattern.compile("\\{([A-Za-z0-9_.-]+)}");
-    private static final int MAX_VALUE_CHARACTERS = 240;
     private static final Map<String, String> BUILT_INS = Map.of("rhombus", "◆");
 
     public List<HudLine> format(String template, PayloadData data) {
@@ -22,11 +21,7 @@ public final class TopicTemplateFormatter {
         ArrayList<HudLine> lines = new ArrayList<>();
         for (String line : template.split("\\R", -1)) {
             String resolved = resolve(line, variables);
-            lines.add(new HudLine(0, MinecraftColorParser.parse(
-                    resolved,
-                    JsonDisplayFormatter.PRIMARY_TEXT,
-                    MAX_VALUE_CHARACTERS
-            )));
+            lines.add(new HudLine(0, MinecraftColorParser.parse(resolved, JsonDisplayFormatter.PRIMARY_TEXT)));
         }
         return List.copyOf(lines);
     }

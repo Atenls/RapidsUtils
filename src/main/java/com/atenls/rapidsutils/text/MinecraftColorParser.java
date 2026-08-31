@@ -14,6 +14,10 @@ public final class MinecraftColorParser {
     private MinecraftColorParser() {
     }
 
+    public static List<Segment> parse(String input, int defaultColor) {
+        return parse(input, defaultColor, Integer.MAX_VALUE);
+    }
+
     public static List<Segment> parse(String input, int defaultColor, int maxVisibleCharacters) {
         if (input == null || input.isEmpty() || maxVisibleCharacters <= 0) {
             return List.of();
@@ -31,6 +35,27 @@ public final class MinecraftColorParser {
                 currentColor = ampersandHex;
                 index += 8;
                 continue;
+            }
+
+            if (input.charAt(index) == '&' && index + 1 < input.length()) {
+                char code = Character.toLowerCase(input.charAt(index + 1));
+                int legacyIndex = Character.digit(code, 16);
+                if (legacyIndex >= 0) {
+                    flush(result, currentText, currentColor);
+                    currentColor = LEGACY_COLORS[legacyIndex];
+                    index += 2;
+                    continue;
+                }
+                if (code == 'r') {
+                    flush(result, currentText, currentColor);
+                    currentColor = defaultColor & 0xFFFFFF;
+                    index += 2;
+                    continue;
+                }
+                if (code >= 'k' && code <= 'o') {
+                    index += 2;
+                    continue;
+                }
             }
 
             if (input.charAt(index) == '§' && index + 1 < input.length()) {
