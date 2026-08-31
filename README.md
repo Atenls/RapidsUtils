@@ -13,7 +13,7 @@ The receiver is registered before the client connects. Fabric advertises the reg
 
 The server does not need Fabric or this mod. It only needs to send the documented Bukkit plugin message payload.
 
-When the server advertises the incoming Plugin Messaging channel `rapidsclientdata:version`, the client sends its mod version once after joining. The message body is the raw UTF-8 version string, currently `20260831-2300`.
+When the server advertises the incoming Plugin Messaging channel `rapidsclientdata:version`, the client sends its mod version once after joining. The message body is the raw UTF-8 version string, currently `20260901-0230`.
 
 ## Wire protocol
 
@@ -27,6 +27,9 @@ The complete plugin message body is one UTF-8 JSON document:
   "full": true,
   "duration": 60,
   "index": 5,
+  "x": 160,
+  "y": 90,
+  "opacity": 0.75,
   "data": {
     "floor": "§bFrozen Vault",
     "wave": 3,
@@ -35,7 +38,7 @@ The complete plugin message body is one UTF-8 JSON document:
 }
 ```
 
-GuoScript sends this shape from `sendClientData(player, topic, data, duration, index)` and `broadcastClientData(topic, data, duration, index)`. All seven outer keys are required. Legacy three-argument calls still send the same shape with `duration` and `index` set to `null`.
+GuoScript sends the base shape from `sendClientData(player, topic, data, duration, index)` and `broadcastClientData(topic, data, duration, index)`. The original seven outer keys remain required. The optional `x`, `y`, and `opacity` keys may be omitted or set to `null`.
 
 - `version` must currently be `1`.
 - `topic` identifies an independently displayed data group.
@@ -43,6 +46,8 @@ GuoScript sends this shape from `sendClientData(player, topic, data, duration, i
 - `full` must currently be `true`.
 - `duration` and `index` are preserved as immutable JSON values. A numeric `duration` is the HUD lifetime in client ticks. `null` falls back to the topic's client-side `displaySeconds`; `-1` keeps the topic visible until it is replaced, removed, or the connection is cleared. Other non-numeric values use the same fallback behavior as `null`.
 - A numeric `index` orders HUD panels from lowest to highest. `null` and other non-numeric values fall back to the topic's client-side `index`; custom topics default to `10`. Equal indexes retain the topics' stable first-seen order.
+- Numeric `x` and `y` values specify the center of that topic's panel, not its top-left corner. A floating-point value from `0` inclusive to `1` exclusive is a fraction of the scaled screen size, so `x: 0.5, y: 0.5` places the panel at screen center. Other numbers are scaled HUD pixel coordinates. Either axis may be supplied independently. An omitted, `null`, or non-numeric axis keeps the normal client-side position for that axis. A topic with a server-provided `y` is positioned independently and does not consume space in the normal vertical stack.
+- Numeric `opacity` overrides the topic panel background opacity. Values are clamped to `0.0` through `1.0`; omitted, `null`, and non-numeric values use the client's configured background opacity.
 - `data` may be any JSON object, array, string, number, boolean, or null. `null` and an empty object `{}` are removal messages for that topic. Their sequence is retained, so an older packet cannot restore removed data.
 
 Malformed messages, unsupported versions, partial updates, and stale sequences are ignored. Topic snapshots and sequence baselines are cleared when the client world changes or the connection closes. Clearing on a world change allows a Velocity/Bungee-style backend switch to accept the new server's sequence range even though the client remains connected to the proxy. Legacy Minecraft colors (`§0`-`§f`), `§r`, and `§x§R§R§G§G§B§B` colors in string values are displayed directly. Templates also support RGB colors in the form `&#rrggbb`; legacy ampersand colors such as `&a` and gradient syntax are not parsed.
@@ -80,4 +85,4 @@ $env:JAVA_HOME = 'D:\MC\jdk-21.0.10'
 .\gradlew.bat build
 ```
 
-The remapped client mod is written to `build/libs/rapidsutils-20260831-2300.jar`.
+The remapped client mod is written to `build/libs/rapidsutils-20260901-0230.jar`.

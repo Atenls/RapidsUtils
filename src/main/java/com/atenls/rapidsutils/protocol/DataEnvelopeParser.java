@@ -47,8 +47,11 @@ public final class DataEnvelopeParser {
 
             PayloadData duration = convert(root.get("duration"), 0);
             PayloadData index = convert(root.get("index"), 0);
+            PayloadData x = convert(root.get("x"), 0);
+            PayloadData y = convert(root.get("y"), 0);
+            PayloadData opacity = convert(root.get("opacity"), 0);
             PayloadData data = convert(root.get("data"), 0);
-            return Optional.of(new DataEnvelope(version, topic, sequence, true, duration, index, data));
+            return Optional.of(new DataEnvelope(version, topic, sequence, true, duration, index, x, y, opacity, data));
         } catch (JsonParseException | ArithmeticException | IllegalStateException | ClassCastException e) {
             return Optional.empty();
         }

@@ -133,7 +133,8 @@ class TopicSnapshotStoreTest {
             PayloadData index,
             PayloadData data
     ) {
-        return new DataEnvelope(DataEnvelope.CURRENT_VERSION, topic, sequence, true, duration, index, data);
+        return new DataEnvelope(DataEnvelope.CURRENT_VERSION, topic, sequence, true,
+                duration, index, NULL, NULL, NULL, data);
     }
 
     private static PayloadData number(String value) {

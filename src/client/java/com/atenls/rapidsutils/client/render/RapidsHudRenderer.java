@@ -19,6 +19,7 @@ import net.minecraft.text.Text;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public final class RapidsHudRenderer {
     private static final int PANEL_PADDING = 8;
@@ -56,7 +57,7 @@ public final class RapidsHudRenderer {
         }
 
         int panelMaxWidth = Math.min(config.maxWidth, availableWidth);
-        int y = config.margin;
+        int stackedY = config.margin;
         long currentTick = store.currentTick();
         for (TopicSnapshot snapshot : store.snapshot().orderedForHud(config::index)) {
             DataEnvelope envelope = snapshot.envelope();
@@ -66,9 +67,12 @@ public final class RapidsHudRenderer {
                 continue;
             }
 
-            int availableHeight = screenHeight - config.margin - y;
+            boolean serverPositionedY = envelope.screenY().isPresent();
+            int availableHeight = serverPositionedY
+                    ? screenHeight
+                    : screenHeight - config.margin - stackedY;
             if (availableHeight < PANEL_PADDING * 2 + LINE_HEIGHT) {
-                break;
+                continue;
             }
 
             List<HudLine> logicalLines = linesFor(envelope);
@@ -77,7 +81,12 @@ public final class RapidsHudRenderer {
                 continue;
             }
 
-            int x = Math.min(config.margin, Math.max(0, screenWidth - panel.width()));
+            int defaultX = Math.min(config.margin, Math.max(0, screenWidth - panel.width()));
+            int x = centeredCoordinate(envelope.resolvedScreenX(screenWidth), panel.width(), defaultX);
+            int y = centeredCoordinate(envelope.resolvedScreenY(screenHeight), panel.height(), stackedY);
+            float opacity = envelope.panelOpacity()
+                    .map(BigDecimal::floatValue)
+                    .orElse(config.backgroundOpacity);
             fillRounded(
                     context,
                     x,
@@ -85,14 +94,16 @@ public final class RapidsHudRenderer {
                     panel.width(),
                     panel.height(),
                     8,
-                    alphaColor(config.backgroundOpacity, BACKGROUND_RGB)
+                    alphaColor(opacity, BACKGROUND_RGB)
             );
             int rowY = y + PANEL_PADDING;
             for (RenderRow row : panel.rows()) {
                 context.drawText(textRenderer, row.text(), x + PANEL_PADDING + row.indent(), rowY, 0xFFFFFFFF, true);
                 rowY += LINE_HEIGHT;
             }
-            y += panel.height() + PANEL_GAP;
+            if (!serverPositionedY) {
+                stackedY += panel.height() + PANEL_GAP;
+            }
         }
     }
 
@@ -189,6 +200,17 @@ public final class RapidsHudRenderer {
     private static int alphaColor(float opacity, int rgb) {
         int alpha = Math.round(Math.max(0.0F, Math.min(1.0F, opacity)) * 255.0F);
         return (alpha << 24) | (rgb & 0xFFFFFF);
+    }
+
+    private static int centeredCoordinate(Optional<BigDecimal> center, int size, int fallback) {
+        if (center.isEmpty()) {
+            return fallback;
+        }
+        double coordinate = center.orElseThrow().doubleValue() - size / 2.0D;
+        if (!Double.isFinite(coordinate)) {
+            return fallback;
+        }
+        return (int) Math.round(Math.max(Integer.MIN_VALUE, Math.min(Integer.MAX_VALUE, coordinate)));
     }
 
     private record RenderRow(int indent, OrderedText text) {
