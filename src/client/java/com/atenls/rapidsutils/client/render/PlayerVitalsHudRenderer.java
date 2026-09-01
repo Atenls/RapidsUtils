@@ -57,7 +57,7 @@ public final class PlayerVitalsHudRenderer {
 
         RapidsConfig.VitalsBarStyle style = config.vitalsBarStyle;
         int groupX = (context.getScaledWindowWidth() - groupWidth) / 2;
-        int y = context.getScaledWindowHeight() - HudStatusBarHeightRegistry.getHeight(ID);
+        int y = context.getScaledWindowHeight() - HudStatusBarHeightRegistry.getHeight(ID) - (style.height() - 9);
         float healthRatio = vitals.healthRatio();
         int healthColor = style == RapidsConfig.VitalsBarStyle.D
                 ? mix(FLAT_HEALTH_CRITICAL, FLAT_HEALTH_HEALTHY, healthRatio)
