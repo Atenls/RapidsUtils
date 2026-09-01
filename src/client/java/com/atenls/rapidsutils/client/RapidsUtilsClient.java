@@ -3,6 +3,7 @@ package com.atenls.rapidsutils.client;
 import com.atenls.rapidsutils.client.network.RapidsDataReceiver;
 import com.atenls.rapidsutils.client.config.RapidsConfig;
 import com.atenls.rapidsutils.client.render.RapidsHudRenderer;
+import com.atenls.rapidsutils.state.PlayerVitalsState;
 import com.atenls.rapidsutils.state.TopicSnapshotStore;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -34,8 +35,9 @@ public final class RapidsUtilsClient implements ClientModInitializer {
         RapidsConfig config = RapidsConfig.load();
         AtomicLong clientTicks = new AtomicLong();
         TopicSnapshotStore store = new TopicSnapshotStore(clientTicks::get);
+        PlayerVitalsState playerVitals = new PlayerVitalsState();
         ClientTickEvents.END_CLIENT_TICK.register(client -> clientTicks.incrementAndGet());
-        RapidsDataReceiver.register(store);
+        RapidsDataReceiver.register(store, playerVitals);
         registerKeyBindings(config);
         HudElementRegistry.removeElement(VanillaHudElements.ARMOR_BAR);
         HudElementRegistry.removeElement(VanillaHudElements.FOOD_BAR);
