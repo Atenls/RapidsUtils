@@ -60,12 +60,16 @@ public final class RapidsHudRenderer {
 
         int panelMaxWidth = Math.min(config.maxWidth, availableWidth);
         int stackedY = config.margin;
-        long currentTick = store.currentTick();
+        double currentTick = store.currentTick() + tickCounter.getTickProgress(false);
         for (TopicSnapshot snapshot : store.snapshot().orderedForHud(config::index)) {
             DataEnvelope envelope = snapshot.envelope();
             BigDecimal fallbackDurationTicks = BigDecimal.valueOf(config.displaySeconds(envelope.topic()))
                     .multiply(BigDecimal.valueOf(20L));
-            if (!snapshot.isVisibleAt(currentTick, fallbackDurationTicks)) {
+            float fadeFactor = snapshot.fadeFactorAt(currentTick, fallbackDurationTicks);
+            if (fadeFactor <= 0.0F) {
+                if (snapshot.isExpiredAfterFadeAt(currentTick, fallbackDurationTicks)) {
+                    store.expire(envelope.topic(), envelope.sequence());
+                }
                 continue;
             }
 
@@ -104,11 +108,12 @@ public final class RapidsHudRenderer {
                     panel.width(),
                     panel.height(),
                     8,
-                    alphaColor(opacity, BACKGROUND_RGB)
+                    alphaColor(opacity * fadeFactor, BACKGROUND_RGB)
             );
+            int textColor = alphaColor(fadeFactor, 0xFFFFFF);
             int rowY = y + PANEL_PADDING;
             for (RenderRow row : panel.rows()) {
-                context.drawText(textRenderer, row.text(), x + PANEL_PADDING + row.indent(), rowY, 0xFFFFFFFF, true);
+                context.drawText(textRenderer, row.text(), x + PANEL_PADDING + row.indent(), rowY, textColor, true);
                 rowY += LINE_HEIGHT;
             }
             if (!independentlyPositionedY) {

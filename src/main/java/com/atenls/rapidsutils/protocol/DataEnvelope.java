@@ -13,6 +13,8 @@ public record DataEnvelope(
         PayloadData x,
         PayloadData y,
         PayloadData opacity,
+        PayloadData fadeIn,
+        PayloadData fadeOut,
         PayloadData data
 ) {
     public static final int CURRENT_VERSION = 1;
@@ -45,12 +47,43 @@ public record DataEnvelope(
         return number(opacity);
     }
 
+    public Optional<BigDecimal> fadeInTicks() {
+        return nonNegativeNumber(fadeIn);
+    }
+
+    public Optional<BigDecimal> fadeOutTicks() {
+        return nonNegativeNumber(fadeOut);
+    }
+
+    public DataEnvelope(
+            int version,
+            String topic,
+            long sequence,
+            boolean full,
+            PayloadData duration,
+            PayloadData index,
+            PayloadData x,
+            PayloadData y,
+            PayloadData opacity,
+            PayloadData data
+    ) {
+        this(version, topic, sequence, full, duration, index, x, y, opacity, nullValue(), nullValue(), data);
+    }
+
     private static Optional<BigDecimal> number(PayloadData value) {
         if (value instanceof PayloadData.ScalarValue(PayloadData.ScalarKind kind, String raw)
                 && kind == PayloadData.ScalarKind.NUMBER) {
             return Optional.of(new BigDecimal(raw));
         }
         return Optional.empty();
+    }
+
+    private static Optional<BigDecimal> nonNegativeNumber(PayloadData value) {
+        return number(value).filter(number -> number.signum() >= 0);
+    }
+
+    private static PayloadData nullValue() {
+        return new PayloadData.ScalarValue(PayloadData.ScalarKind.NULL, "null");
     }
 
     private static BigDecimal resolveCoordinate(BigDecimal value, int screenSize) {

@@ -29,7 +29,17 @@ public final class TopicSnapshotStore {
             if (removal) {
                 updatedTopics.remove(envelope.topic());
             } else {
-                updatedTopics.put(envelope.topic(), new TopicSnapshot(envelope, tickCounter.getAsLong()));
+                long receivedAtTick = tickCounter.getAsLong();
+                TopicSnapshot previous = updatedTopics.get(envelope.topic());
+                TopicSnapshot updated = previous == null
+                        ? new TopicSnapshot(envelope, receivedAtTick)
+                        : new TopicSnapshot(
+                                envelope,
+                                receivedAtTick,
+                                previous.firstReceivedAtTick(),
+                                previous.fadeInTicks()
+                        );
+                updatedTopics.put(envelope.topic(), updated);
             }
             Map<String, Long> updatedSequences = new LinkedHashMap<>(before.sequences());
             updatedSequences.put(envelope.topic(), envelope.sequence());
@@ -46,6 +56,22 @@ public final class TopicSnapshotStore {
 
     public long currentTick() {
         return tickCounter.getAsLong();
+    }
+
+    public void expire(String topic, long sequence) {
+        while (true) {
+            State before = current.get();
+            TopicSnapshot existing = before.dashboard().topics().get(topic);
+            if (existing == null || existing.envelope().sequence() != sequence) {
+                return;
+            }
+            Map<String, TopicSnapshot> updatedTopics = new LinkedHashMap<>(before.dashboard().topics());
+            updatedTopics.remove(topic);
+            State after = new State(new DashboardSnapshot(updatedTopics), before.sequences());
+            if (current.compareAndSet(before, after)) {
+                return;
+            }
+        }
     }
 
     public void clear() {

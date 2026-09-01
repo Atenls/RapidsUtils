@@ -50,8 +50,12 @@ public final class DataEnvelopeParser {
             PayloadData x = convert(root.get("x"), 0);
             PayloadData y = convert(root.get("y"), 0);
             PayloadData opacity = convert(root.get("opacity"), 0);
+            PayloadData fadeIn = convert(root.get("fadeIn"), 0);
+            PayloadData fadeOut = convert(root.get("fadeOut"), 0);
             PayloadData data = convert(root.get("data"), 0);
-            return Optional.of(new DataEnvelope(version, topic, sequence, true, duration, index, x, y, opacity, data));
+            return Optional.of(new DataEnvelope(
+                    version, topic, sequence, true, duration, index, x, y, opacity, fadeIn, fadeOut, data
+            ));
         } catch (JsonParseException | ArithmeticException | IllegalStateException | ClassCastException e) {
             return Optional.empty();
         }

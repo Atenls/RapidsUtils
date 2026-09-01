@@ -71,6 +71,71 @@ class TopicSnapshotStoreTest {
     }
 
     @Test
+    void fadesInOnceAndFadesOutAfterTheLatestSnapshotExpires() {
+        AtomicLong clock = new AtomicLong(100L);
+        TopicSnapshotStore store = new TopicSnapshotStore(clock::get);
+        store.apply(envelope("notice", 1, number("20"), NULL));
+
+        TopicSnapshot first = store.snapshot().topics().get("notice");
+        assertEquals(0.0F, first.fadeFactorAt(100.0D, BigDecimal.valueOf(60L)), 0.0001F);
+        assertEquals(0.4F, first.fadeFactorAt(102.0D, BigDecimal.valueOf(60L)), 0.0001F);
+        assertEquals(1.0F, first.fadeFactorAt(105.0D, BigDecimal.valueOf(60L)), 0.0001F);
+
+        clock.set(110L);
+        store.apply(envelope("notice", 2, number("20"), NULL));
+        TopicSnapshot updated = store.snapshot().topics().get("notice");
+        assertEquals(100L, updated.firstReceivedAtTick());
+        assertEquals(110L, updated.receivedAtTick());
+        assertEquals(1.0F, updated.fadeFactorAt(110.0D, BigDecimal.valueOf(60L)), 0.0001F);
+        assertEquals(2.0F / 3.0F, updated.fadeFactorAt(135.0D, BigDecimal.valueOf(60L)), 0.0001F);
+        assertEquals(0.0F, updated.fadeFactorAt(145.0D, BigDecimal.valueOf(60L)), 0.0001F);
+        assertTrue(updated.isExpiredAfterFadeAt(145.0D, BigDecimal.valueOf(60L)));
+    }
+
+    @Test
+    void completedFadeRemovalAllowsTheTopicToFadeInAgain() {
+        AtomicLong clock = new AtomicLong(100L);
+        TopicSnapshotStore store = new TopicSnapshotStore(clock::get);
+        store.apply(envelope("notice", 1));
+        store.apply(envelope("notice", 2));
+
+        store.expire("notice", 1);
+        assertTrue(store.snapshot().topics().containsKey("notice"));
+        store.expire("notice", 2);
+        assertTrue(store.snapshot().topics().isEmpty());
+
+        clock.set(200L);
+        store.apply(envelope("notice", 3));
+        TopicSnapshot repeated = store.snapshot().topics().get("notice");
+        assertEquals(200L, repeated.firstReceivedAtTick());
+        assertEquals(0.0F, repeated.fadeFactorAt(200.0D, BigDecimal.valueOf(60L)), 0.0001F);
+    }
+
+    @Test
+    void serverFadeDurationsOverrideTheDefaults() {
+        DataEnvelope envelope = new DataEnvelope(
+                DataEnvelope.CURRENT_VERSION,
+                "notice",
+                1,
+                true,
+                number("10"),
+                NULL,
+                NULL,
+                NULL,
+                NULL,
+                number("2"),
+                number("4"),
+                new PayloadData.ObjectValue(java.util.Map.of("shown", number("1")))
+        );
+        TopicSnapshot snapshot = new TopicSnapshot(envelope, 100L);
+
+        assertEquals(0.5F, snapshot.fadeFactorAt(101.0D, BigDecimal.valueOf(60L)), 0.0001F);
+        assertEquals(1.0F, snapshot.fadeFactorAt(110.0D, BigDecimal.valueOf(60L)), 0.0001F);
+        assertEquals(0.5F, snapshot.fadeFactorAt(112.0D, BigDecimal.valueOf(60L)), 0.0001F);
+        assertTrue(snapshot.isExpiredAfterFadeAt(114.0D, BigDecimal.valueOf(60L)));
+    }
+
+    @Test
     void nullAndEmptyObjectDataRemoveTopicWithoutAllowingStaleResurrection() {
         TopicSnapshotStore store = new TopicSnapshotStore(() -> 0L);
         store.apply(envelope("dungeon", 1));

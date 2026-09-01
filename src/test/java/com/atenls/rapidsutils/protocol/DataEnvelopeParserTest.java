@@ -14,6 +14,7 @@ class DataEnvelopeParserTest {
         Optional<DataEnvelope> parsed = DataEnvelopeParser.parse("""
                 {"version":1,"topic":"dungeon","sequence":42,"full":true,
                  "duration":60.5,"index":2,"x":160.5,"y":90,"opacity":0.75,
+                 "fadeIn":8,"fadeOut":20,
                  "data":{"wave":3,"members":["A",true,null]}}
                 """);
 
@@ -28,6 +29,8 @@ class DataEnvelopeParserTest {
         assertEquals("160.5", envelope.screenX().orElseThrow().toPlainString());
         assertEquals("90", envelope.screenY().orElseThrow().toPlainString());
         assertEquals("0.75", envelope.panelOpacity().orElseThrow().toPlainString());
+        assertEquals("8", envelope.fadeInTicks().orElseThrow().toPlainString());
+        assertEquals("20", envelope.fadeOutTicks().orElseThrow().toPlainString());
         PayloadData.ObjectValue root = assertInstanceOf(PayloadData.ObjectValue.class, envelope.data());
         assertEquals("3", assertInstanceOf(PayloadData.ScalarValue.class, root.values().get("wave")).value());
         PayloadData.ArrayValue members = assertInstanceOf(PayloadData.ArrayValue.class, root.values().get("members"));
@@ -66,17 +69,21 @@ class DataEnvelopeParserTest {
         assertTrue(nullValues.screenX().isEmpty());
         assertTrue(nullValues.screenY().isEmpty());
         assertTrue(nullValues.panelOpacity().isEmpty());
+        assertTrue(nullValues.fadeInTicks().isEmpty());
+        assertTrue(nullValues.fadeOutTicks().isEmpty());
 
         DataEnvelope futureValues = DataEnvelopeParser.parse("""
                 {"version":1,"topic":"future","sequence":1,"full":true,
                  "duration":{"mode":"manual"},"index":[1,2],
-                 "x":"center","y":{},"opacity":true,"data":{}}
+                 "x":"center","y":{},"opacity":true,"fadeIn":-1,"fadeOut":"slow","data":{}}
                 """).orElseThrow();
         assertInstanceOf(PayloadData.ObjectValue.class, futureValues.duration());
         assertInstanceOf(PayloadData.ArrayValue.class, futureValues.index());
         assertTrue(futureValues.screenX().isEmpty());
         assertTrue(futureValues.screenY().isEmpty());
         assertTrue(futureValues.panelOpacity().isEmpty());
+        assertTrue(futureValues.fadeInTicks().isEmpty());
+        assertTrue(futureValues.fadeOutTicks().isEmpty());
     }
 
     @Test

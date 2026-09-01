@@ -30,6 +30,8 @@ The complete plugin message body is one UTF-8 JSON document:
   "x": 160,
   "y": 90,
   "opacity": 0.75,
+  "fadeIn": 5,
+  "fadeOut": 15,
   "data": {
     "floor": "§bFrozen Vault",
     "wave": 3,
@@ -38,7 +40,7 @@ The complete plugin message body is one UTF-8 JSON document:
 }
 ```
 
-GuoScript sends the base shape from `sendClientData(player, topic, data, duration, index)` and `broadcastClientData(topic, data, duration, index)`. The original seven outer keys remain required. The optional `x`, `y`, and `opacity` keys may be omitted or set to `null`.
+GuoScript sends the base shape from `sendClientData(player, topic, data, duration, index)` and `broadcastClientData(topic, data, duration, index)`. The original seven outer keys remain required. The optional `x`, `y`, `opacity`, `fadeIn`, and `fadeOut` keys may be omitted or set to `null`.
 
 - `version` must currently be `1`.
 - `topic` identifies an independently displayed data group.
@@ -48,6 +50,7 @@ GuoScript sends the base shape from `sendClientData(player, topic, data, duratio
 - A numeric `index` orders HUD panels from lowest to highest. `null` and other non-numeric values fall back to the topic's client-side `index`; custom topics default to `10`. Equal indexes retain the topics' stable first-seen order.
 - Numeric `x` and `y` values specify the center of that topic's panel, not its top-left corner. A floating-point value from `0` inclusive to `1` exclusive is a fraction of the scaled screen size, so `x: 0.5, y: 0.5` places the panel at screen center. Other numbers are scaled HUD pixel coordinates. Either axis may be supplied independently. An omitted, `null`, or non-numeric axis keeps the normal client-side position for that axis. A topic with a server-provided `y` is positioned independently and does not consume space in the normal vertical stack.
 - Numeric `opacity` overrides the topic panel background opacity. Values are clamped to `0.0` through `1.0`; omitted, `null`, and non-numeric values use the client's configured background opacity.
+- Numeric non-negative `fadeIn` and `fadeOut` values control the panel animation in client ticks. They default to `5` and `15`; `0` disables that phase. Fade-in starts only when a topic first becomes active, while later snapshots for the same active topic update its content and expiration without restarting the animation. Fade-out starts after the latest snapshot's `duration` expires. Once the fade-out completes, a later snapshot for that topic starts a new fade-in.
 - `data` may be any JSON object, array, string, number, boolean, or null. `null` and an empty object `{}` are removal messages for that topic. Their sequence is retained, so an older packet cannot restore removed data.
 
 Malformed messages, unsupported versions, partial updates, and stale sequences are ignored. Topic snapshots and sequence baselines are cleared when the client world changes or the connection closes. Clearing on a world change allows a Velocity/Bungee-style backend switch to accept the new server's sequence range even though the client remains connected to the proxy. Legacy Minecraft colors (`§0`-`§f`), `§r`, and `§x§R§R§G§G§B§B` colors in string values are displayed directly. Templates also support RGB colors in the form `&#rrggbb`.
@@ -56,7 +59,7 @@ Malformed messages, unsupported versions, partial updates, and stale sequences a
 
 The HUD starts at a configurable scaled-screen margin of 5 pixels by default, follows the normal F1 HUD visibility condition, and computes each topic panel independently from its visible content. The hidden topic `hidden_notification` is anchored to the bottom-right corner using that same screen margin while keeping its text left-aligned. Press `H` in game to toggle the HUD; the key can be rebound in Minecraft's Controls screen and the new state is saved immediately. When the server sends `duration: null`, a topic is shown for its configured `displaySeconds` (three seconds by default). A numeric server duration overrides that fallback and is measured in client ticks. Topics without a configured template use the generic recursive JSON display.
 
-Rounded backgrounds are drawn as non-overlapping horizontal spans, so translucent pixels are blended only once. Nested data, collection length, string length, wrapping, and screen height are bounded to keep the display readable.
+The whole panel, including its background and text, fades as one unit. Rounded backgrounds are drawn as non-overlapping horizontal spans, so translucent pixels are blended only once. Nested data, collection length, string length, wrapping, and screen height are bounded to keep the display readable.
 
 On first launch the mod creates `config/rapidsutils.json`. The built-in `dungeon`, `mastery`, `update`, and `reload` topics keep their existing fallback durations and indexes, but are hidden from configuration and always render with the hard-coded `{display}{extraData}` template.
 
