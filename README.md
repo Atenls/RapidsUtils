@@ -70,7 +70,11 @@ The `rapidsclientdata:player` message body is a separate UTF-8 JSON document con
 }
 ```
 
-The first valid message activates the player-vitals override. While active, the vanilla health row is suppressed and two 182-pixel bars are drawn above the normal status-bar baseline: health above mana. The health fill is green above 65%, blue above 35%, and red at 35% or below; mana is blue. Each bar clamps only its visual fill between zero and its maximum while preserving the server value in the label, shows the corresponding regeneration value at the right edge, uses a 20%-opacity tinted empty region, and has a muted same-hue gray border.
+The first valid message activates the player-vitals override. While active, the vanilla health row is suppressed and the health and mana bars share one 182-pixel-wide row above the normal status-bar baseline. Each bar occupies roughly 40% of that row: health is aligned left and mana is aligned right.
+
+The bars use a flat rounded style without highlight strips, black drop shadows, or text shadows. Their borders are dark variants of the current fill hue and the empty region uses the fill hue at 20% opacity. Health linearly interpolates from dark blood red at zero to a soft bright red at full health; mana remains blue. At 25% health or below, the health bar occasionally performs a short pixel shake and drops a small blood pixel from the current fill edge.
+
+Only the rounded and compacted current value is drawn in each bar. Maximum and regeneration values remain part of the required payload and still determine fill ratios where applicable, but are no longer rendered as text.
 
 All six keys are required and must be JSON numbers. Invalid messages are ignored without replacing the last valid snapshot. The override is cleared on a client-world change or disconnect, so the vanilla health row returns until another valid `rapidsclientdata:player` message arrives.
 

@@ -2,8 +2,6 @@ package com.atenls.rapidsutils.protocol;
 
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -23,16 +21,6 @@ class PlayerVitalsParserTest {
         assertEquals("-1", vitals.manaRegen().toPlainString());
         assertEquals(0.725F, vitals.healthRatio(), 0.0001F);
         assertEquals(0.6F, vitals.manaRatio(), 0.0001F);
-        assertEquals(PlayerVitals.HealthBand.GREEN, vitals.healthBand());
-    }
-
-    @Test
-    void usesExactHealthColorThresholds() {
-        assertEquals(PlayerVitals.HealthBand.GREEN, vitalsAt(65.1).healthBand());
-        assertEquals(PlayerVitals.HealthBand.BLUE, vitalsAt(65).healthBand());
-        assertEquals(PlayerVitals.HealthBand.BLUE, vitalsAt(35.1).healthBand());
-        assertEquals(PlayerVitals.HealthBand.RED, vitalsAt(35).healthBand());
-        assertEquals(PlayerVitals.HealthBand.RED, vitalsAt(0).healthBand());
     }
 
     @Test
@@ -60,12 +48,5 @@ class PlayerVitalsParserTest {
                 {"health":"10","health_max":20,"health_regen":1,
                  "mana":5,"mana_max":10,"mana_regen":1}
                 """).isEmpty());
-    }
-
-    private static PlayerVitals vitalsAt(double health) {
-        return new PlayerVitals(
-                BigDecimal.valueOf(health), BigDecimal.valueOf(100), BigDecimal.ZERO,
-                BigDecimal.ZERO, BigDecimal.valueOf(100), BigDecimal.ZERO
-        );
     }
 }

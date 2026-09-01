@@ -3,6 +3,7 @@ package com.atenls.rapidsutils.client.render;
 import com.atenls.rapidsutils.client.RapidsUtilsClient;
 import com.atenls.rapidsutils.protocol.PlayerVitals;
 import com.atenls.rapidsutils.state.PlayerVitalsState;
+import com.atenls.rapidsutils.util.RoundingUtil;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudStatusBarHeightRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
@@ -11,24 +12,22 @@ import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.util.Identifier;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 public final class PlayerVitalsHudRenderer {
     public static final Identifier ID = Identifier.of(RapidsUtilsClient.MOD_ID, "player_vitals");
-    public static final int STATUS_BAR_HEIGHT = 25;
+    public static final int STATUS_BAR_HEIGHT = 11;
 
-    private static final int BAR_WIDTH = 182;
+    private static final int GROUP_WIDTH = 182;
+    private static final float BAR_WIDTH_RATIO = 0.4F;
     private static final int BAR_HEIGHT = 11;
-    private static final int BAR_GAP = 3;
-    private static final int HEALTH_GREEN = 0x66C38A;
-    private static final int HEALTH_GREEN_BORDER = 0x58675F;
-    private static final int HEALTH_BLUE = 0x66A9CC;
-    private static final int HEALTH_BLUE_BORDER = 0x56646C;
-    private static final int HEALTH_RED = 0xD06F72;
-    private static final int HEALTH_RED_BORDER = 0x6B595B;
-    private static final int MANA_BLUE = 0x7188D8;
-    private static final int MANA_BLUE_BORDER = 0x5A6176;
-    private static final int TEXT_COLOR = 0xFFF4F6F7;
+    private static final int CORNER_RADIUS = 3;
+    private static final float LOW_HEALTH_THRESHOLD = 0.25F;
+    private static final int HEALTH_CRITICAL = 0x78131D;
+    private static final int HEALTH_HEALTHY = 0xF07D7D;
+    private static final int MANA_BLUE = 0x439ED1;
+    private static final int TEXT_COLOR = 0xFFF5F6F7;
+    private static final int[] LOW_HEALTH_SHAKE_X = {0, -1, 1, -1, 1, 0, 0, 0, 0};
+    private static final int[] LOW_HEALTH_SHAKE_Y = {0, 0, 0, 1, 0, 0, 0, 0, 0};
 
     private final PlayerVitalsState state;
 
@@ -37,34 +36,52 @@ public final class PlayerVitalsHudRenderer {
     }
 
     public void render(DrawContext context, RenderTickCounter tickCounter) {
-        state.snapshot().ifPresent(vitals -> renderBars(context, vitals));
+        state.snapshot().ifPresent(vitals -> renderBars(context, tickCounter, vitals));
     }
 
-    private static void renderBars(DrawContext context, PlayerVitals vitals) {
-        int width = Math.min(BAR_WIDTH, context.getScaledWindowWidth() - 12);
-        if (width < 60) {
+    private static void renderBars(DrawContext context, RenderTickCounter tickCounter, PlayerVitals vitals) {
+        int groupWidth = Math.min(GROUP_WIDTH, context.getScaledWindowWidth() - 12);
+        int barWidth = Math.round(groupWidth * BAR_WIDTH_RATIO);
+        if (barWidth < 48) {
             return;
         }
 
-        int x = (context.getScaledWindowWidth() - width) / 2;
-        int bottom = context.getScaledWindowHeight() - HudStatusBarHeightRegistry.getHeight(ID);
-        int manaY = bottom - BAR_HEIGHT;
-        int healthY = manaY - BAR_GAP - BAR_HEIGHT;
+        int groupX = (context.getScaledWindowWidth() - groupWidth) / 2;
+        int y = context.getScaledWindowHeight()
+                - HudStatusBarHeightRegistry.getHeight(ID)
+                - BAR_HEIGHT;
+        float healthRatio = vitals.healthRatio();
+        int healthColor = mix(HEALTH_CRITICAL, HEALTH_HEALTHY, healthRatio);
+        LowHealthMotion motion = lowHealthMotion(tickCounter, healthRatio);
 
-        BarColors healthColors = switch (vitals.healthBand()) {
-            case GREEN -> new BarColors(HEALTH_GREEN, HEALTH_GREEN_BORDER);
-            case BLUE -> new BarColors(HEALTH_BLUE, HEALTH_BLUE_BORDER);
-            case RED -> new BarColors(HEALTH_RED, HEALTH_RED_BORDER);
-        };
         drawBar(
-                context, x, healthY, width, "HP",
-                vitals.health(), vitals.healthMax(), vitals.healthRegen(),
-                vitals.healthRatio(), healthColors
+                context,
+                groupX + motion.x(),
+                y + motion.y(),
+                barWidth,
+                vitals.health(),
+                healthRatio,
+                healthColor
         );
+        if (motion.dropProgress() >= 0.0F) {
+            drawBloodDrop(
+                    context,
+                    groupX + motion.x(),
+                    y + motion.y(),
+                    barWidth,
+                    healthRatio,
+                    healthColor,
+                    motion.dropProgress()
+            );
+        }
         drawBar(
-                context, x, manaY, width, "MP",
-                vitals.mana(), vitals.manaMax(), vitals.manaRegen(),
-                vitals.manaRatio(), new BarColors(MANA_BLUE, MANA_BLUE_BORDER)
+                context,
+                groupX + groupWidth - barWidth,
+                y,
+                barWidth,
+                vitals.mana(),
+                vitals.manaRatio(),
+                MANA_BLUE
         );
     }
 
@@ -73,23 +90,25 @@ public final class PlayerVitalsHudRenderer {
             int x,
             int y,
             int width,
-            String label,
             BigDecimal value,
-            BigDecimal maximum,
-            BigDecimal regen,
             float ratio,
-            BarColors colors
+            int fillColor
     ) {
-        fillChamfered(context, x + 1, y + 1, width, BAR_HEIGHT, 0x65000000);
-        fillChamfered(context, x, y, width, BAR_HEIGHT, 0xFF000000 | colors.border());
+        int borderColor = mix(fillColor, 0x090A0C, 0.58F);
+        fillRounded(context, x, y, width, BAR_HEIGHT, CORNER_RADIUS, 0xFF000000 | borderColor);
 
         int innerX = x + 1;
         int innerY = y + 1;
         int innerWidth = width - 2;
         int innerHeight = BAR_HEIGHT - 2;
-        context.fill(
-                innerX, innerY, innerX + innerWidth, innerY + innerHeight,
-                alphaColor(0.2F, colors.fill())
+        fillRounded(
+                context,
+                innerX,
+                innerY,
+                innerWidth,
+                innerHeight,
+                CORNER_RADIUS - 1,
+                alphaColor(0.2F, fillColor)
         );
 
         int filledWidth = Math.round(innerWidth * ratio);
@@ -97,39 +116,102 @@ public final class PlayerVitalsHudRenderer {
             filledWidth = Math.max(1, filledWidth);
         }
         if (filledWidth > 0) {
-            context.fill(innerX, innerY, innerX + filledWidth, innerY + innerHeight,
-                    alphaColor(0.92F, colors.fill()));
-            context.fill(innerX, innerY, innerX + filledWidth, innerY + 1,
-                    alphaColor(0.82F, mix(colors.fill(), 0xFFFFFF, 0.28F)));
-            context.fill(innerX, innerY + innerHeight - 1, innerX + filledWidth, innerY + innerHeight,
-                    alphaColor(0.75F, mix(colors.fill(), 0x000000, 0.24F)));
+            fillRoundedClipped(
+                    context,
+                    innerX,
+                    innerY,
+                    innerWidth,
+                    innerHeight,
+                    CORNER_RADIUS - 1,
+                    0xFF000000 | fillColor,
+                    innerX + filledWidth
+            );
         }
 
         TextRenderer renderer = MinecraftClient.getInstance().textRenderer;
-        String valueText = label + " " + format(value) + "/" + format(maximum);
-        String regenText = signed(regen);
-        int textY = y + 2;
-        context.drawText(renderer, valueText, x + 5, textY, TEXT_COLOR, true);
-        context.drawText(renderer, regenText, x + width - 5 - renderer.getWidth(regenText), textY, TEXT_COLOR, true);
+        String text = RoundingUtil.longFormat(value);
+        int textX = x + (width - renderer.getWidth(text)) / 2;
+        context.drawText(renderer, text, textX, y + 2, TEXT_COLOR, false);
     }
 
-    private static void fillChamfered(DrawContext context, int x, int y, int width, int height, int color) {
-        context.fill(x + 1, y, x + width - 1, y + 1, color);
-        context.fill(x, y + 1, x + width, y + height - 1, color);
-        context.fill(x + 1, y + height - 1, x + width - 1, y + height, color);
-    }
-
-    private static String format(BigDecimal value) {
-        BigDecimal rounded = value.stripTrailingZeros();
-        if (rounded.scale() > 1) {
-            rounded = rounded.setScale(1, RoundingMode.HALF_UP).stripTrailingZeros();
+    private static LowHealthMotion lowHealthMotion(RenderTickCounter tickCounter, float healthRatio) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (healthRatio > LOW_HEALTH_THRESHOLD || client.world == null) {
+            return LowHealthMotion.NONE;
         }
-        return rounded.toPlainString();
+
+        double animationTick = client.world.getTime() + tickCounter.getTickProgress(false);
+        long wholeTick = (long) Math.floor(animationTick);
+        long cycle = Math.floorDiv(wholeTick, 60L);
+        int cycleTick = (int) Math.floorMod(wholeTick, 60L);
+        int eventStart = 8 + (int) Math.floorMod(cycle * 1_103_515_245L + 12_345L, 31L);
+        int eventTick = cycleTick - eventStart;
+        if (eventTick < 0 || eventTick >= 9) {
+            return LowHealthMotion.NONE;
+        }
+
+        int intensity = healthRatio <= 0.1F ? 2 : 1;
+        float dropProgress = eventTick < 2 ? -1.0F : (eventTick - 2) / 6.0F;
+        return new LowHealthMotion(
+                LOW_HEALTH_SHAKE_X[eventTick] * intensity,
+                LOW_HEALTH_SHAKE_Y[eventTick],
+                dropProgress
+        );
     }
 
-    private static String signed(BigDecimal value) {
-        String prefix = value.signum() > 0 ? "+" : "";
-        return prefix + format(value);
+    private static void drawBloodDrop(
+            DrawContext context,
+            int x,
+            int y,
+            int width,
+            float ratio,
+            int color,
+            float progress
+    ) {
+        int innerWidth = width - 2;
+        int dropX = x + 1 + Math.round(innerWidth * ratio);
+        int dropY = y + BAR_HEIGHT + Math.round(progress * 4.0F);
+        int alpha = Math.round((1.0F - progress * 0.35F) * 255.0F);
+        context.fill(dropX, dropY, dropX + 1, dropY + 2, (alpha << 24) | color);
+    }
+
+    private static void fillRounded(
+            DrawContext context,
+            int x,
+            int y,
+            int width,
+            int height,
+            int radius,
+            int color
+    ) {
+        fillRoundedClipped(context, x, y, width, height, radius, color, x + width);
+    }
+
+    private static void fillRoundedClipped(
+            DrawContext context,
+            int x,
+            int y,
+            int width,
+            int height,
+            int radius,
+            int color,
+            int clipRight
+    ) {
+        int actualRadius = Math.min(radius, Math.min(width / 2, height / 2));
+        for (int row = 0; row < height; row++) {
+            int distanceFromEdge = Math.min(row, height - row - 1);
+            int inset = 0;
+            if (distanceFromEdge < actualRadius) {
+                double vertical = actualRadius - distanceFromEdge - 0.5D;
+                inset = (int) Math.ceil(actualRadius
+                        - Math.sqrt(actualRadius * actualRadius - vertical * vertical));
+            }
+            int rowStart = x + inset;
+            int rowEnd = Math.min(x + width - inset, clipRight);
+            if (rowEnd > rowStart) {
+                context.fill(rowStart, y + row, rowEnd, y + row + 1, color);
+            }
+        }
     }
 
     private static int alphaColor(float opacity, int rgb) {
@@ -145,6 +227,7 @@ public final class PlayerVitalsHudRenderer {
         return (red << 16) | (green << 8) | blue;
     }
 
-    private record BarColors(int fill, int border) {
+    private record LowHealthMotion(int x, int y, float dropProgress) {
+        private static final LowHealthMotion NONE = new LowHealthMotion(0, 0, -1.0F);
     }
 }
