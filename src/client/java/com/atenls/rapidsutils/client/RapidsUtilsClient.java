@@ -41,8 +41,16 @@ public final class RapidsUtilsClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> clientTicks.incrementAndGet());
         RapidsDataReceiver.register(store, playerVitals);
         registerKeyBindings(config);
-        HudElementRegistry.removeElement(VanillaHudElements.ARMOR_BAR);
-        HudElementRegistry.removeElement(VanillaHudElements.FOOD_BAR);
+        HudElementRegistry.replaceElement(
+                VanillaHudElements.ARMOR_BAR,
+                vanilla -> (context, tickCounter) -> {
+                }
+        );
+        HudElementRegistry.replaceElement(
+                VanillaHudElements.FOOD_BAR,
+                vanilla -> (context, tickCounter) -> {
+                }
+        );
         PlayerVitalsHudRenderer playerVitalsRenderer = new PlayerVitalsHudRenderer(playerVitals);
         HudElementRegistry.attachElementBefore(
                 VanillaHudElements.HEALTH_BAR,
