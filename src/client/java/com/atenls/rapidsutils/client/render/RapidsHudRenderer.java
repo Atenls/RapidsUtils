@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 public final class RapidsHudRenderer {
+    private static final String BOTTOM_RIGHT_TOPIC = "hidden_notification";
     private static final int PANEL_PADDING = 8;
     private static final int PANEL_GAP = 6;
     private static final int MIN_PANEL_WIDTH = 20;
@@ -67,9 +68,10 @@ public final class RapidsHudRenderer {
                 continue;
             }
 
-            boolean serverPositionedY = envelope.screenY().isPresent();
-            int availableHeight = serverPositionedY
-                    ? screenHeight
+            boolean bottomRight = BOTTOM_RIGHT_TOPIC.equals(envelope.topic());
+            boolean independentlyPositionedY = bottomRight || envelope.screenY().isPresent();
+            int availableHeight = independentlyPositionedY
+                    ? (bottomRight ? screenHeight - config.margin * 2 : screenHeight)
                     : screenHeight - config.margin - stackedY;
             if (availableHeight < PANEL_PADDING * 2 + LINE_HEIGHT) {
                 continue;
@@ -81,9 +83,16 @@ public final class RapidsHudRenderer {
                 continue;
             }
 
-            int defaultX = Math.min(config.margin, Math.max(0, screenWidth - panel.width()));
-            int x = centeredCoordinate(envelope.resolvedScreenX(screenWidth), panel.width(), defaultX);
-            int y = centeredCoordinate(envelope.resolvedScreenY(screenHeight), panel.height(), stackedY);
+            int x;
+            int y;
+            if (bottomRight) {
+                x = screenWidth - config.margin - panel.width();
+                y = screenHeight - config.margin - panel.height();
+            } else {
+                int defaultX = Math.min(config.margin, Math.max(0, screenWidth - panel.width()));
+                x = centeredCoordinate(envelope.resolvedScreenX(screenWidth), panel.width(), defaultX);
+                y = centeredCoordinate(envelope.resolvedScreenY(screenHeight), panel.height(), stackedY);
+            }
             float opacity = envelope.panelOpacity()
                     .map(BigDecimal::floatValue)
                     .orElse(config.backgroundOpacity);
@@ -101,7 +110,7 @@ public final class RapidsHudRenderer {
                 context.drawText(textRenderer, row.text(), x + PANEL_PADDING + row.indent(), rowY, 0xFFFFFFFF, true);
                 rowY += LINE_HEIGHT;
             }
-            if (!serverPositionedY) {
+            if (!independentlyPositionedY) {
                 stackedY += panel.height() + PANEL_GAP;
             }
         }
