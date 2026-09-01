@@ -23,6 +23,7 @@ import java.util.Optional;
 
 public final class RapidsHudRenderer {
     private static final String BOTTOM_RIGHT_TOPIC = "hidden_notification";
+    private static final float BOTTOM_RIGHT_DEFAULT_OPACITY = 0.4F;
     private static final int PANEL_PADDING = 8;
     private static final int PANEL_GAP = 6;
     private static final int MIN_PANEL_WIDTH = 20;
@@ -95,7 +96,7 @@ public final class RapidsHudRenderer {
             }
             float opacity = envelope.panelOpacity()
                     .map(BigDecimal::floatValue)
-                    .orElse(config.backgroundOpacity);
+                    .orElse(bottomRight ? BOTTOM_RIGHT_DEFAULT_OPACITY : config.backgroundOpacity);
             fillRounded(
                     context,
                     x,
