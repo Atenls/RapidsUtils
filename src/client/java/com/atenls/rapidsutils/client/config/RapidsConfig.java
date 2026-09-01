@@ -153,6 +153,7 @@ public final class RapidsConfig {
         A("A · 薄雾玻璃", 9),
         B("B · 清晰细框", 11),
         C("C · 悬浮液面", 9),
+        D("D · 简洁扁平", 11),
         E("E · 秘银刻线", 11);
 
         private final String displayName;

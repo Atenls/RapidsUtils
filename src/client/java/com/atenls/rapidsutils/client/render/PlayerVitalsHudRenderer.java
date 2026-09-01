@@ -24,7 +24,11 @@ public final class PlayerVitalsHudRenderer {
     private static final int HEALTH_CRITICAL = 0x77131F;
     private static final int HEALTH_HEALTHY = 0xDD4655;
     private static final int MANA_BLUE = 0x2F91D2;
+    private static final int FLAT_HEALTH_CRITICAL = 0x78131D;
+    private static final int FLAT_HEALTH_HEALTHY = 0xF07D7D;
+    private static final int FLAT_MANA_BLUE = 0x439ED1;
     private static final int TEXT_COLOR = 0xFFFFF8EC;
+    private static final int FLAT_TEXT_COLOR = 0xFFF5F6F7;
     private static final int TRACK = 0xA3080B0F;
     private static final int TRACK_SOFT = 0x6B090D12;
     private static final int FRAME = 0x7ACFDADC;
@@ -57,7 +61,10 @@ public final class PlayerVitalsHudRenderer {
                 - HudStatusBarHeightRegistry.getHeight(ID)
                 - style.height();
         float healthRatio = vitals.healthRatio();
-        int healthColor = mix(HEALTH_CRITICAL, HEALTH_HEALTHY, healthRatio);
+        int healthColor = style == RapidsConfig.VitalsBarStyle.D
+                ? mix(FLAT_HEALTH_CRITICAL, FLAT_HEALTH_HEALTHY, healthRatio)
+                : mix(HEALTH_CRITICAL, HEALTH_HEALTHY, healthRatio);
+        int manaColor = style == RapidsConfig.VitalsBarStyle.D ? FLAT_MANA_BLUE : MANA_BLUE;
         LowHealthMotion motion = lowHealthMotion(tickCounter, healthRatio);
 
         drawBar(
@@ -89,7 +96,7 @@ public final class PlayerVitalsHudRenderer {
                 barWidth,
                 vitals.mana(),
                 vitals.manaRatio(),
-                MANA_BLUE,
+                manaColor,
                 style
         );
     }
@@ -108,6 +115,7 @@ public final class PlayerVitalsHudRenderer {
             case A -> drawGlassBar(context, x, y, width, ratio, fillColor);
             case B -> drawHairlineBar(context, x, y, width, ratio, fillColor);
             case C -> drawFloatingBar(context, x, y, width, ratio, fillColor);
+            case D -> drawRoundedFlatBar(context, x, y, width, ratio, fillColor);
             case E -> drawSilverBar(context, x, y, width, ratio, fillColor);
         }
 
@@ -115,7 +123,14 @@ public final class PlayerVitalsHudRenderer {
         String text = RoundingUtil.longFormat(value);
         int textX = x + (width - renderer.getWidth(text)) / 2;
         int textY = style.height() == 11 ? y + 2 : y;
-        context.drawText(renderer, text, textX, textY, TEXT_COLOR, true);
+        context.drawText(
+                renderer,
+                text,
+                textX,
+                textY,
+                style == RapidsConfig.VitalsBarStyle.D ? FLAT_TEXT_COLOR : TEXT_COLOR,
+                style != RapidsConfig.VitalsBarStyle.D
+        );
     }
 
     private static void drawGlassBar(
@@ -208,9 +223,80 @@ public final class PlayerVitalsHudRenderer {
         context.fill(centerX, y + 9, centerX + 1, y + 11, SILVER);
     }
 
+    private static void drawRoundedFlatBar(
+            DrawContext context,
+            int x,
+            int y,
+            int width,
+            float ratio,
+            int color
+    ) {
+        int borderColor = mix(color, 0x090A0C, 0.58F);
+        fillRounded(context, x, y, width, 11, 3, 0xFF000000 | borderColor);
+
+        int innerX = x + 1;
+        int innerY = y + 1;
+        int innerWidth = width - 2;
+        int innerHeight = 9;
+        fillRounded(context, innerX, innerY, innerWidth, innerHeight, 2, alphaColor(0.2F, color));
+
+        int filledWidth = filledWidth(innerWidth, ratio);
+        if (filledWidth > 0) {
+            fillRoundedClipped(
+                    context,
+                    innerX,
+                    innerY,
+                    innerWidth,
+                    innerHeight,
+                    2,
+                    0xFF000000 | color,
+                    innerX + filledWidth
+            );
+        }
+    }
+
     private static int filledWidth(int width, float ratio) {
         int filledWidth = Math.round(width * ratio);
         return ratio > 0.0F ? Math.max(1, filledWidth) : 0;
+    }
+
+    private static void fillRounded(
+            DrawContext context,
+            int x,
+            int y,
+            int width,
+            int height,
+            int radius,
+            int color
+    ) {
+        fillRoundedClipped(context, x, y, width, height, radius, color, x + width);
+    }
+
+    private static void fillRoundedClipped(
+            DrawContext context,
+            int x,
+            int y,
+            int width,
+            int height,
+            int radius,
+            int color,
+            int clipRight
+    ) {
+        int actualRadius = Math.min(radius, Math.min(width / 2, height / 2));
+        for (int row = 0; row < height; row++) {
+            int distanceFromEdge = Math.min(row, height - row - 1);
+            int inset = 0;
+            if (distanceFromEdge < actualRadius) {
+                double vertical = actualRadius - distanceFromEdge - 0.5D;
+                inset = (int) Math.ceil(actualRadius
+                        - Math.sqrt(actualRadius * actualRadius - vertical * vertical));
+            }
+            int rowStart = x + inset;
+            int rowEnd = Math.min(x + width - inset, clipRight);
+            if (rowEnd > rowStart) {
+                context.fill(rowStart, y + row, rowEnd, y + row + 1, color);
+            }
+        }
     }
 
     private static LowHealthMotion lowHealthMotion(RenderTickCounter tickCounter, float healthRatio) {
@@ -251,6 +337,7 @@ public final class PlayerVitalsHudRenderer {
         int inset = switch (style) {
             case B -> 1;
             case E -> 2;
+            case D -> 1;
             case A, C -> 0;
         };
         int innerWidth = width - inset * 2;
@@ -270,6 +357,11 @@ public final class PlayerVitalsHudRenderer {
         int green = Math.round(((first >> 8) & 0xFF) * (1.0F - clamped) + ((second >> 8) & 0xFF) * clamped);
         int blue = Math.round((first & 0xFF) * (1.0F - clamped) + (second & 0xFF) * clamped);
         return (red << 16) | (green << 8) | blue;
+    }
+
+    private static int alphaColor(float opacity, int rgb) {
+        int alpha = Math.round(Math.clamp(opacity, 0.0F, 1.0F) * 255.0F);
+        return (alpha << 24) | (rgb & 0xFFFFFF);
     }
 
     private record LowHealthMotion(int x, int y, float dropProgress) {
