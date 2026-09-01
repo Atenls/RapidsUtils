@@ -37,6 +37,8 @@ public final class RapidsUtilsClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> clientTicks.incrementAndGet());
         RapidsDataReceiver.register(store);
         registerKeyBindings(config);
+        HudElementRegistry.removeElement(VanillaHudElements.ARMOR_BAR);
+        HudElementRegistry.removeElement(VanillaHudElements.FOOD_BAR);
         RapidsHudRenderer renderer = new RapidsHudRenderer(store, config);
         HudElementRegistry.attachElementBefore(
                 VanillaHudElements.CHAT,
