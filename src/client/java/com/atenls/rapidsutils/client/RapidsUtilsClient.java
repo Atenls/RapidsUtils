@@ -2,6 +2,7 @@ package com.atenls.rapidsutils.client;
 
 import com.atenls.rapidsutils.client.network.RapidsDataReceiver;
 import com.atenls.rapidsutils.client.config.RapidsConfig;
+import com.atenls.rapidsutils.client.render.PlayerVitalsHudRenderer;
 import com.atenls.rapidsutils.client.render.RapidsHudRenderer;
 import com.atenls.rapidsutils.state.PlayerVitalsState;
 import com.atenls.rapidsutils.state.TopicSnapshotStore;
@@ -9,6 +10,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudStatusBarHeightRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.option.KeyBinding;
@@ -41,6 +43,21 @@ public final class RapidsUtilsClient implements ClientModInitializer {
         registerKeyBindings(config);
         HudElementRegistry.removeElement(VanillaHudElements.ARMOR_BAR);
         HudElementRegistry.removeElement(VanillaHudElements.FOOD_BAR);
+        PlayerVitalsHudRenderer playerVitalsRenderer = new PlayerVitalsHudRenderer(playerVitals);
+        HudElementRegistry.attachElementBefore(
+                VanillaHudElements.HEALTH_BAR,
+                PlayerVitalsHudRenderer.ID,
+                playerVitalsRenderer::render
+        );
+        HudStatusBarHeightRegistry.addLeft(
+                PlayerVitalsHudRenderer.ID,
+                player -> playerVitals.snapshot().isPresent() ? PlayerVitalsHudRenderer.STATUS_BAR_HEIGHT : 0
+        );
+        HudElementRegistry.replaceElement(VanillaHudElements.HEALTH_BAR, vanilla -> (context, tickCounter) -> {
+            if (playerVitals.snapshot().isEmpty()) {
+                vanilla.render(context, tickCounter);
+            }
+        });
         RapidsHudRenderer renderer = new RapidsHudRenderer(store, config);
         HudElementRegistry.attachElementBefore(
                 VanillaHudElements.CHAT,

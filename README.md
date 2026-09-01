@@ -1,6 +1,6 @@
 # RapidsUtils
 
-RapidsUtils is a client-only Fabric mod for Minecraft 1.21.11. It receives UTF-8 JSON sent by a Bukkit/Paper server on the `rapidsclientdata:data` plugin messaging channel and presents the latest topic snapshots in a compact HUD.
+RapidsUtils is a client-only Fabric mod for Minecraft 1.21.11. It receives UTF-8 JSON sent by a Bukkit/Paper server on the `rapidsclientdata:data` and `rapidsclientdata:player` plugin messaging channels and presents server-controlled data in the HUD.
 
 The receiver is registered before the client connects. Fabric advertises the registered play channel to the server through Minecraft's channel registration payload after join, so Bukkit can detect the listener without Fabric or RapidsUtils on the server.
 
@@ -54,6 +54,25 @@ GuoScript sends the base shape from `sendClientData(player, topic, data, duratio
 - `data` may be any JSON object, array, string, number, boolean, or null. `null` and an empty object `{}` are removal messages for that topic. Their sequence is retained, so an older packet cannot restore removed data.
 
 Malformed messages, unsupported versions, partial updates, and stale sequences are ignored. Topic snapshots and sequence baselines are cleared when the client world changes or the connection closes. Clearing on a world change allows a Velocity/Bungee-style backend switch to accept the new server's sequence range even though the client remains connected to the proxy. Legacy Minecraft colors (`§0`-`§f`), `§r`, and `§x§R§R§G§G§B§B` colors in string values are displayed directly. Templates also support RGB colors in the form `&#rrggbb`.
+
+## Player vitals override
+
+The `rapidsclientdata:player` message body is a separate UTF-8 JSON document containing all six numeric fields:
+
+```json
+{
+  "health": 72.5,
+  "health_max": 100,
+  "health_regen": 2.25,
+  "mana": 48,
+  "mana_max": 80,
+  "mana_regen": 3
+}
+```
+
+The first valid message activates the player-vitals override. While active, the vanilla health row is suppressed and two 182-pixel bars are drawn above the normal status-bar baseline: health above mana. The health fill is green above 65%, blue above 35%, and red at 35% or below; mana is blue. Each bar clamps only its visual fill between zero and its maximum while preserving the server value in the label, shows the corresponding regeneration value at the right edge, uses a 20%-opacity tinted empty region, and has a muted same-hue gray border.
+
+All six keys are required and must be JSON numbers. Invalid messages are ignored without replacing the last valid snapshot. The override is cleared on a client-world change or disconnect, so the vanilla health row returns until another valid `rapidsclientdata:player` message arrives.
 
 ## HUD and configuration
 
