@@ -34,6 +34,7 @@ public final class RapidsConfig {
     public int margin = 5;
     public float backgroundOpacity = 0.6F;
     public int maxWidth = 300;
+    public VitalsBarStyle vitalsBarStyle = VitalsBarStyle.A;
     public Map<String, TopicSettings> topics = new LinkedHashMap<>();
 
     public static RapidsConfig load() {
@@ -106,6 +107,9 @@ public final class RapidsConfig {
         margin = Math.max(0, Math.min(64, margin));
         backgroundOpacity = Math.max(0.15F, Math.min(0.95F, backgroundOpacity));
         maxWidth = Math.max(140, Math.min(600, maxWidth));
+        if (vitalsBarStyle == null) {
+            vitalsBarStyle = VitalsBarStyle.A;
+        }
         if (topics == null) {
             topics = new LinkedHashMap<>();
         } else if (!(topics instanceof LinkedHashMap)) {
@@ -143,6 +147,34 @@ public final class RapidsConfig {
             return DISPLAY_TEMPLATE;
         }
         return topic.startsWith(HIDDEN_TOPIC_PREFIX) ? HIDDEN_TOPIC_TEMPLATE : null;
+    }
+
+    public enum VitalsBarStyle {
+        A("A · 薄雾玻璃", 9),
+        B("B · 清晰细框", 11),
+        C("C · 悬浮液面", 9),
+        E("E · 秘银刻线", 11);
+
+        private final String displayName;
+        private final int height;
+
+        VitalsBarStyle(String displayName, int height) {
+            this.displayName = displayName;
+            this.height = height;
+        }
+
+        public String displayName() {
+            return displayName;
+        }
+
+        public int height() {
+            return height;
+        }
+
+        public VitalsBarStyle next() {
+            VitalsBarStyle[] styles = values();
+            return styles[(ordinal() + 1) % styles.length];
+        }
     }
 
     public static final class TopicSettings {

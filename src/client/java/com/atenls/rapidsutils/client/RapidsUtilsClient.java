@@ -51,7 +51,7 @@ public final class RapidsUtilsClient implements ClientModInitializer {
                 vanilla -> (context, tickCounter) -> {
                 }
         );
-        PlayerVitalsHudRenderer playerVitalsRenderer = new PlayerVitalsHudRenderer(playerVitals);
+        PlayerVitalsHudRenderer playerVitalsRenderer = new PlayerVitalsHudRenderer(playerVitals, config);
         HudElementRegistry.attachElementBefore(
                 VanillaHudElements.HEALTH_BAR,
                 PlayerVitalsHudRenderer.ID,

@@ -72,7 +72,7 @@ The `rapidsclientdata:player` message body is a separate UTF-8 JSON document con
 
 The first valid message activates the player-vitals override. While active, the vanilla health row is suppressed and the health and mana bars share one 182-pixel-wide row above the normal status-bar baseline. Each bar occupies roughly 40% of that row: health is aligned left and mana is aligned right.
 
-The bars use a flat rounded style without highlight strips, black drop shadows, or text shadows. Their borders are dark variants of the current fill hue and the empty region uses the fill hue at 20% opacity. Health linearly interpolates from dark blood red at zero to a soft bright red at full health; mana remains blue. At 25% health or below, the health bar occasionally performs a short pixel shake and drops a small blood pixel from the current fill edge.
+Four lightweight styles are built in and can be selected from the Mod Menu settings screen or with `vitalsBarStyle` in `config/rapidsutils.json`: `A` is a nine-pixel misted-glass bar and is the default, `B` adds a one-pixel hairline frame, `C` removes the complete frame and floats the liquid over a narrow track, and `E` adds slim silver end caps and a center etching. Health linearly interpolates from dark blood red at zero to a clear bright red at full health; mana remains blue. All four styles keep the centered value text. At 25% health or below, the health bar occasionally performs a short pixel shake and drops a small blood pixel from the current fill edge.
 
 Only the rounded and compacted current value is drawn in each bar. Maximum and regeneration values remain part of the required payload and still determine fill ratios where applicable, but are no longer rendered as text.
 
@@ -94,13 +94,14 @@ Server topics whose IDs start with `hidden_`, such as `hidden_test`, are also hi
   "margin": 5,
   "backgroundOpacity": 0.6,
   "maxWidth": 300,
+  "vitalsBarStyle": "A",
   "topics": {}
 }
 ```
 
 Template variables use `{variable}` syntax. `{rhombus}` is built in and renders `◆`. Every top-level `data` key is available directly, such as `{dungeonDisplay}`; nested object values can also be addressed as `{parent.child}`. Variables that are not present in the received `data` are replaced with an empty string.
 
-No configuration library is required. If optional Mod Menu 17.0.0 is installed, open RapidsUtils from the Mods screen to edit global HUD options, open a topic to edit its fallback display duration, fallback sort index, and multiline template together, or use **Add topic** to create another client-side topic definition. The JSON file remains directly editable without Mod Menu.
+No configuration library is required. If optional Mod Menu 17.0.0 is installed, open RapidsUtils from the Mods screen to edit global HUD options, cycle the player-vitals bar style, open a topic to edit its fallback display duration, fallback sort index, and multiline template together, or use **Add topic** to create another client-side topic definition. The JSON file remains directly editable without Mod Menu.
 
 ## Build
 

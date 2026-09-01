@@ -20,6 +20,7 @@ public final class RapidsConfigScreen extends Screen {
     private float backgroundOpacity;
     private int margin;
     private int maxWidth;
+    private RapidsConfig.VitalsBarStyle vitalsBarStyle;
     private int topicPage;
 
     public RapidsConfigScreen(Screen parent) {
@@ -30,6 +31,7 @@ public final class RapidsConfigScreen extends Screen {
         this.backgroundOpacity = config.backgroundOpacity;
         this.margin = config.margin;
         this.maxWidth = config.maxWidth;
+        this.vitalsBarStyle = config.vitalsBarStyle;
     }
 
     @Override
@@ -76,9 +78,15 @@ public final class RapidsConfigScreen extends Screen {
                 return widthMessage();
             }
         });
+        addDrawableChild(ButtonWidget.builder(vitalsBarStyleMessage(), button -> {
+                    vitalsBarStyle = vitalsBarStyle.next();
+                    button.setMessage(vitalsBarStyleMessage());
+                })
+                .dimensions(controlX, y + 96, CONTROL_WIDTH, CONTROL_HEIGHT)
+                .build());
 
         List<String> topicNames = new ArrayList<>(config.topics.keySet());
-        int topicsY = 148;
+        int topicsY = 172;
         int navigationY = height - 52;
         int pageSize = Math.max(1, (navigationY - topicsY) / 22);
         int pageCount = Math.max(1, (topicNames.size() + pageSize - 1) / pageSize);
@@ -130,7 +138,7 @@ public final class RapidsConfigScreen extends Screen {
     public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
         super.render(context, mouseX, mouseY, deltaTicks);
         context.drawCenteredTextWithShadow(textRenderer, title, width / 2, 14, 0xFFFFFFFF);
-        context.drawCenteredTextWithShadow(textRenderer, Text.literal("主题"), width / 2, 132, 0xFFB8C0CC);
+        context.drawCenteredTextWithShadow(textRenderer, Text.literal("主题"), width / 2, 156, 0xFFB8C0CC);
     }
 
     private void openTopic(String topic) {
@@ -144,6 +152,7 @@ public final class RapidsConfigScreen extends Screen {
         config.backgroundOpacity = backgroundOpacity;
         config.margin = margin;
         config.maxWidth = maxWidth;
+        config.vitalsBarStyle = vitalsBarStyle;
         config.save();
         close();
     }
@@ -169,6 +178,10 @@ public final class RapidsConfigScreen extends Screen {
 
     private Text widthMessage() {
         return Text.literal("最大宽度：" + maxWidth + "px");
+    }
+
+    private Text vitalsBarStyleMessage() {
+        return Text.literal("血条样式：" + vitalsBarStyle.displayName());
     }
 
     private static float sliderToOpacity(double value) {

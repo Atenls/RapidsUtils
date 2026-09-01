@@ -1,6 +1,7 @@
 package com.atenls.rapidsutils.client.render;
 
 import com.atenls.rapidsutils.client.RapidsUtilsClient;
+import com.atenls.rapidsutils.client.config.RapidsConfig;
 import com.atenls.rapidsutils.protocol.PlayerVitals;
 import com.atenls.rapidsutils.state.PlayerVitalsState;
 import com.atenls.rapidsutils.util.RoundingUtil;
@@ -15,45 +16,46 @@ import java.math.BigDecimal;
 
 public final class PlayerVitalsHudRenderer {
     public static final Identifier ID = Identifier.of(RapidsUtilsClient.MOD_ID, "player_vitals");
-    public static final int STATUS_BAR_HEIGHT = 13;
+    public static final int STATUS_BAR_HEIGHT = 11;
 
     private static final int GROUP_WIDTH = 182;
     private static final float BAR_WIDTH_RATIO = 0.4F;
-    private static final int BAR_HEIGHT = 13;
-    private static final int TRACK_INSET = 2;
     private static final float LOW_HEALTH_THRESHOLD = 0.25F;
     private static final int HEALTH_CRITICAL = 0x77131F;
-    private static final int HEALTH_HEALTHY = 0xD94352;
-    private static final int MANA_BLUE = 0x2688C7;
-    private static final int TEXT_COLOR = 0xFFF8F4EC;
-    private static final int FRAME_DARK = 0xFF090C10;
-    private static final int FRAME_MID = 0xFF303943;
-    private static final int FRAME_LIGHT = 0xFF66737E;
-    private static final int TRACK_DARK = 0xFF080B0F;
+    private static final int HEALTH_HEALTHY = 0xDD4655;
+    private static final int MANA_BLUE = 0x2F91D2;
+    private static final int TEXT_COLOR = 0xFFFFF8EC;
+    private static final int TRACK = 0xA3080B0F;
+    private static final int TRACK_SOFT = 0x6B090D12;
+    private static final int FRAME = 0x7ACFDADC;
+    private static final int SILVER = 0xFFC9D9DC;
     private static final int[] LOW_HEALTH_SHAKE_X = {0, -1, 1, -1, 1, 0, 0, 0, 0};
     private static final int[] LOW_HEALTH_SHAKE_Y = {0, 0, 0, 1, 0, 0, 0, 0, 0};
 
     private final PlayerVitalsState state;
+    private final RapidsConfig config;
 
-    public PlayerVitalsHudRenderer(PlayerVitalsState state) {
+    public PlayerVitalsHudRenderer(PlayerVitalsState state, RapidsConfig config) {
         this.state = state;
+        this.config = config;
     }
 
     public void render(DrawContext context, RenderTickCounter tickCounter) {
         state.snapshot().ifPresent(vitals -> renderBars(context, tickCounter, vitals));
     }
 
-    private static void renderBars(DrawContext context, RenderTickCounter tickCounter, PlayerVitals vitals) {
+    private void renderBars(DrawContext context, RenderTickCounter tickCounter, PlayerVitals vitals) {
         int groupWidth = Math.min(GROUP_WIDTH, context.getScaledWindowWidth() - 12);
         int barWidth = Math.round(groupWidth * BAR_WIDTH_RATIO);
         if (barWidth < 48) {
             return;
         }
 
+        RapidsConfig.VitalsBarStyle style = config.vitalsBarStyle;
         int groupX = (context.getScaledWindowWidth() - groupWidth) / 2;
         int y = context.getScaledWindowHeight()
                 - HudStatusBarHeightRegistry.getHeight(ID)
-                - BAR_HEIGHT;
+                - style.height();
         float healthRatio = vitals.healthRatio();
         int healthColor = mix(HEALTH_CRITICAL, HEALTH_HEALTHY, healthRatio);
         LowHealthMotion motion = lowHealthMotion(tickCounter, healthRatio);
@@ -65,7 +67,8 @@ public final class PlayerVitalsHudRenderer {
                 barWidth,
                 vitals.health(),
                 healthRatio,
-                healthColor
+                healthColor,
+                style
         );
         if (motion.dropProgress() >= 0.0F) {
             drawBloodDrop(
@@ -75,7 +78,8 @@ public final class PlayerVitalsHudRenderer {
                     barWidth,
                     healthRatio,
                     healthColor,
-                    motion.dropProgress()
+                    motion.dropProgress(),
+                    style
             );
         }
         drawBar(
@@ -85,7 +89,8 @@ public final class PlayerVitalsHudRenderer {
                 barWidth,
                 vitals.mana(),
                 vitals.manaRatio(),
-                MANA_BLUE
+                MANA_BLUE,
+                style
         );
     }
 
@@ -96,65 +101,116 @@ public final class PlayerVitalsHudRenderer {
             int width,
             BigDecimal value,
             float ratio,
-            int fillColor
+            int fillColor,
+            RapidsConfig.VitalsBarStyle style
     ) {
-        fillChamfered(context, x + 1, y + 1, width, BAR_HEIGHT, 0x70000000);
-        fillChamfered(context, x, y, width, BAR_HEIGHT, FRAME_DARK);
-        fillChamfered(context, x + 1, y + 1, width - 2, BAR_HEIGHT - 2, FRAME_MID);
-
-        context.fill(x + 3, y + 1, x + width - 3, y + 2, FRAME_LIGHT);
-        context.fill(x + 1, y + 3, x + 2, y + BAR_HEIGHT - 3, 0xFF4B5660);
-        context.fill(x + 3, y + BAR_HEIGHT - 2, x + width - 3, y + BAR_HEIGHT - 1, 0xFF171D23);
-
-        int innerX = x + TRACK_INSET;
-        int innerY = y + TRACK_INSET;
-        int innerWidth = width - TRACK_INSET * 2;
-        int innerHeight = BAR_HEIGHT - TRACK_INSET * 2;
-        fillChamfered(context, innerX, innerY, innerWidth, innerHeight, TRACK_DARK);
-        context.fill(innerX + 1, innerY + 1, innerX + innerWidth - 1, innerY + 2,
-                0xFF141B22);
-        context.fill(innerX + 1, innerY + innerHeight - 2,
-                innerX + innerWidth - 1, innerY + innerHeight - 1, 0xFF05070A);
-
-        int filledWidth = Math.round(innerWidth * ratio);
-        if (ratio > 0.0F) {
-            filledWidth = Math.max(1, filledWidth);
+        switch (style) {
+            case A -> drawGlassBar(context, x, y, width, ratio, fillColor);
+            case B -> drawHairlineBar(context, x, y, width, ratio, fillColor);
+            case C -> drawFloatingBar(context, x, y, width, ratio, fillColor);
+            case E -> drawSilverBar(context, x, y, width, ratio, fillColor);
         }
-        if (filledWidth > 0) {
-            int clipRight = innerX + filledWidth;
-            fillChamferedClipped(context, innerX, innerY, innerWidth, innerHeight,
-                    0xFF000000 | fillColor, clipRight);
-            fillChamferedClipped(context, innerX, innerY, innerWidth, 1,
-                    0xFF000000 | mix(fillColor, 0xFFFFFF, 0.42F), clipRight);
-            fillChamferedClipped(context, innerX, innerY + 1, innerWidth, 1,
-                    0xFF000000 | mix(fillColor, 0xFFFFFF, 0.20F), clipRight);
-            fillChamferedClipped(context, innerX, innerY + innerHeight - 2, innerWidth, 1,
-                    0xFF000000 | mix(fillColor, 0x000000, 0.18F), clipRight);
-            fillChamferedClipped(context, innerX, innerY + innerHeight - 1, innerWidth, 1,
-                    0xFF000000 | mix(fillColor, 0x000000, 0.38F), clipRight);
-
-            for (int textureX = innerX + 7; textureX < clipRight; textureX += 9) {
-                context.fill(textureX, innerY + 2, textureX + 1,
-                        innerY + innerHeight - 2, alphaColor(0.22F, mix(fillColor, 0x000000, 0.55F)));
-                if (textureX + 1 < clipRight) {
-                    context.fill(textureX + 1, innerY + 2, textureX + 2, innerY + 3,
-                            alphaColor(0.72F, mix(fillColor, 0xFFFFFF, 0.48F)));
-                }
-            }
-
-            if (filledWidth < innerWidth && filledWidth > 1) {
-                int capX = clipRight - 1;
-                context.fill(capX, innerY + 1, capX + 1, innerY + innerHeight - 1,
-                        0xFF000000 | mix(fillColor, 0xFFFFFF, 0.26F));
-            }
-        }
-
-        drawFrameNotches(context, x, y, width);
 
         TextRenderer renderer = MinecraftClient.getInstance().textRenderer;
         String text = RoundingUtil.longFormat(value);
         int textX = x + (width - renderer.getWidth(text)) / 2;
-        context.drawText(renderer, text, textX, y + 2, TEXT_COLOR, true);
+        int textY = style.height() == 11 ? y + 2 : y;
+        context.drawText(renderer, text, textX, textY, TEXT_COLOR, true);
+    }
+
+    private static void drawGlassBar(
+            DrawContext context,
+            int x,
+            int y,
+            int width,
+            float ratio,
+            int color
+    ) {
+        int filledWidth = filledWidth(width, ratio);
+        context.fill(x, y + 1, x + width, y + 9, TRACK_SOFT);
+        context.fill(x, y + 1, x + filledWidth, y + 9, 0xFF000000 | color);
+        if (filledWidth > 1) {
+            context.fill(x + 1, y + 1, x + filledWidth, y + 2,
+                    0xFF000000 | mix(color, 0xFFFFFF, 0.42F));
+        }
+        context.fill(x, y + 8, x + filledWidth, y + 9,
+                0xFF000000 | mix(color, 0x000000, 0.42F));
+    }
+
+    private static void drawHairlineBar(
+            DrawContext context,
+            int x,
+            int y,
+            int width,
+            float ratio,
+            int color
+    ) {
+        context.fill(x + 1, y, x + width - 1, y + 1, FRAME);
+        context.fill(x, y + 1, x + 1, y + 10, FRAME);
+        context.fill(x + width - 1, y + 1, x + width, y + 10, FRAME);
+        context.fill(x + 1, y + 10, x + width - 1, y + 11, FRAME);
+
+        int innerWidth = width - 2;
+        int filledWidth = filledWidth(innerWidth, ratio);
+        context.fill(x + 1, y + 1, x + width - 1, y + 10, TRACK);
+        context.fill(x + 1, y + 1, x + 1 + filledWidth, y + 10, 0xFF000000 | color);
+        if (filledWidth > 1) {
+            context.fill(x + 2, y + 1, x + 1 + filledWidth, y + 2,
+                    0xFF000000 | mix(color, 0xFFFFFF, 0.42F));
+        }
+    }
+
+    private static void drawFloatingBar(
+            DrawContext context,
+            int x,
+            int y,
+            int width,
+            float ratio,
+            int color
+    ) {
+        int filledWidth = filledWidth(width, ratio);
+        context.fill(x, y + 4, x + width, y + 7, TRACK_SOFT);
+        context.fill(x, y + 3, x + filledWidth, y + 8, 0xFF000000 | color);
+        if (filledWidth > 1) {
+            context.fill(x + 1, y + 3, x + filledWidth, y + 4,
+                    0xFF000000 | mix(color, 0xFFFFFF, 0.42F));
+        }
+        context.fill(x, y + 7, x + filledWidth, y + 8,
+                0xFF000000 | mix(color, 0x000000, 0.42F));
+        int capX = x + filledWidth - 1;
+        context.fill(capX, y + 2, capX + 1, y + 9,
+                0xFF000000 | mix(color, 0xFFFFFF, 0.32F));
+    }
+
+    private static void drawSilverBar(
+            DrawContext context,
+            int x,
+            int y,
+            int width,
+            float ratio,
+            int color
+    ) {
+        int innerWidth = width - 4;
+        int filledWidth = filledWidth(innerWidth, ratio);
+        context.fill(x + 2, y + 1, x + width - 2, y + 10, TRACK_SOFT);
+        context.fill(x + 2, y + 1, x + 2 + filledWidth, y + 10, 0xFF000000 | color);
+        if (filledWidth > 1) {
+            context.fill(x + 3, y + 1, x + 2 + filledWidth, y + 2,
+                    0xFF000000 | mix(color, 0xFFFFFF, 0.42F));
+        }
+
+        context.fill(x, y + 2, x + 1, y + 9, SILVER);
+        context.fill(x + 1, y + 1, x + 2, y + 10, SILVER);
+        context.fill(x + width - 2, y + 1, x + width - 1, y + 10, SILVER);
+        context.fill(x + width - 1, y + 2, x + width, y + 9, SILVER);
+        int centerX = x + width / 2;
+        context.fill(centerX, y, centerX + 1, y + 2, SILVER);
+        context.fill(centerX, y + 9, centerX + 1, y + 11, SILVER);
+    }
+
+    private static int filledWidth(int width, float ratio) {
+        int filledWidth = Math.round(width * ratio);
+        return ratio > 0.0F ? Math.max(1, filledWidth) : 0;
     }
 
     private static LowHealthMotion lowHealthMotion(RenderTickCounter tickCounter, float healthRatio) {
@@ -189,60 +245,23 @@ public final class PlayerVitalsHudRenderer {
             int width,
             float ratio,
             int color,
-            float progress
+            float progress,
+            RapidsConfig.VitalsBarStyle style
     ) {
-        int innerWidth = width - TRACK_INSET * 2;
+        int inset = switch (style) {
+            case B -> 1;
+            case E -> 2;
+            case A, C -> 0;
+        };
+        int innerWidth = width - inset * 2;
         int dropX = Math.clamp(
-                x + TRACK_INSET + Math.round(innerWidth * ratio) - 1,
-                x + TRACK_INSET,
-                x + width - TRACK_INSET - 1
+                x + inset + Math.round(innerWidth * ratio) - 1,
+                x + inset,
+                x + width - inset - 1
         );
-        int dropY = y + BAR_HEIGHT + Math.round(progress * 4.0F);
+        int dropY = y + style.height() + Math.round(progress * 4.0F);
         int alpha = Math.round((1.0F - progress * 0.35F) * 255.0F);
         context.fill(dropX, dropY, dropX + 1, dropY + 2, (alpha << 24) | color);
-    }
-
-    private static void drawFrameNotches(DrawContext context, int x, int y, int width) {
-        for (int section = 1; section < 4; section++) {
-            int notchX = x + Math.round(width * (section / 4.0F));
-            context.fill(notchX, y + 1, notchX + 1, y + 2, 0xFF1A2026);
-            context.fill(notchX, y + BAR_HEIGHT - 2, notchX + 1, y + BAR_HEIGHT - 1, FRAME_LIGHT);
-        }
-    }
-
-    private static void fillChamfered(
-            DrawContext context,
-            int x,
-            int y,
-            int width,
-            int height,
-            int color
-    ) {
-        fillChamferedClipped(context, x, y, width, height, color, x + width);
-    }
-
-    private static void fillChamferedClipped(
-            DrawContext context,
-            int x,
-            int y,
-            int width,
-            int height,
-            int color,
-            int clipRight
-    ) {
-        for (int row = 0; row < height; row++) {
-            int inset = row == 0 || row == height - 1 ? 1 : 0;
-            int rowStart = x + inset;
-            int rowEnd = Math.min(x + width - inset, clipRight);
-            if (rowEnd > rowStart) {
-                context.fill(rowStart, y + row, rowEnd, y + row + 1, color);
-            }
-        }
-    }
-
-    private static int alphaColor(float opacity, int rgb) {
-        int alpha = Math.round(Math.clamp(opacity, 0.0F, 1.0F) * 255.0F);
-        return (alpha << 24) | (rgb & 0xFFFFFF);
     }
 
     private static int mix(int first, int second, float weight) {
