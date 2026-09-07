@@ -11,6 +11,9 @@ import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.util.Identifier;
+import net.minecraft.text.Text;
+import net.minecraft.text.Style;
+import net.minecraft.text.StyleSpriteSource;
 
 import java.math.BigDecimal;
 
@@ -19,6 +22,9 @@ public final class PlayerVitalsHudRenderer {
     public static final int STATUS_BAR_HEIGHT = 11;
 
     private static final int GROUP_WIDTH = 182;
+    private static final int VITALS_GLYPH_HEIGHT = 7;
+    private static final Style VITALS_TEXT_STYLE = Style.EMPTY.withFont(
+            new StyleSpriteSource.Font(Identifier.of(RapidsUtilsClient.MOD_ID, "vitals")));
     private static final float BAR_WIDTH_RATIO = 0.4F;
     private static final float LOW_HEALTH_THRESHOLD = 0.25F;
     private static final int HEALTH_CRITICAL = 0x77131F;
@@ -118,16 +124,21 @@ public final class PlayerVitalsHudRenderer {
         }
 
         TextRenderer renderer = MinecraftClient.getInstance().textRenderer;
-        String text = RoundingUtil.longFormat(value);
-        int textX = x + (width - renderer.getWidth(text)) / 2;
-        int textY = style.height() == 11 ? y + 2 : y;
+        Text text = Text.literal(RoundingUtil.longFormat(value)).setStyle(VITALS_TEXT_STYLE);
+        boolean shadow = style != RapidsConfig.VitalsBarStyle.D;
+        // Bitmap advance includes a trailing spacing pixel; only center visible ink.
+        int visibleWidth = renderer.getWidth(text) - 1 + (shadow ? 1 : 0);
+        int textX = x + (width - visibleWidth) / 2;
+        // The bundled font has ascent 7, so its first visible row is drawY.
+        int visibleHeight = VITALS_GLYPH_HEIGHT + (shadow ? 1 : 0);
+        int textY = y + (style.height() - visibleHeight) / 2;
         context.drawText(
                 renderer,
                 text,
                 textX,
                 textY,
                 style == RapidsConfig.VitalsBarStyle.D ? FLAT_TEXT_COLOR : TEXT_COLOR,
-                style != RapidsConfig.VitalsBarStyle.D
+                shadow
         );
     }
 
