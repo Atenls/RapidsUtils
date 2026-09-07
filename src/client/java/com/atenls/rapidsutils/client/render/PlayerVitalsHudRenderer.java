@@ -126,10 +126,10 @@ public final class PlayerVitalsHudRenderer {
         TextRenderer renderer = MinecraftClient.getInstance().textRenderer;
         Text text = Text.literal(RoundingUtil.longFormat(value)).setStyle(VITALS_TEXT_STYLE);
         boolean shadow = style != RapidsConfig.VitalsBarStyle.D;
-        // Bitmap advance includes a trailing spacing pixel; only center visible ink.
-        int visibleWidth = renderer.getWidth(text) - 1 + (shadow ? 1 : 0);
+        // TrueType advances already include the font's side bearings and spacing.
+        int visibleWidth = renderer.getWidth(text) + (shadow ? 1 : 0);
         int textX = x + (width - visibleWidth) / 2;
-        // The bundled font has ascent 7, so its first visible row is drawY.
+        // Nunito's cap height at size 10 is approximately seven GUI pixels.
         int visibleHeight = VITALS_GLYPH_HEIGHT + (shadow ? 1 : 0);
         int textY = y + (style.height() - visibleHeight) / 2;
         context.drawText(
