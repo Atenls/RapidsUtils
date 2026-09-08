@@ -26,7 +26,7 @@ class VitalsFontTest {
 
     @Test
     void atlasDensitiesHaveSmoothEdgesPaddingAndCompleteAsciiCoverage() throws Exception {
-        try (var license = getClass().getResourceAsStream("/assets/rapidsutils/font/ofl_inter.txt")) {
+        try (var license = getClass().getResourceAsStream("/assets/rapidsutils/font/ofl_roboto_mono.txt")) {
             assertNotNull(license);
             assertTrue(new String(license.readAllBytes(), StandardCharsets.UTF_8).contains("SIL OPEN FONT LICENSE"));
         }

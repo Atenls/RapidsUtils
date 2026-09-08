@@ -1,8 +1,8 @@
-"""Generate Inter Medium HUD atlases (fonttools 4.64.0, Pillow 12.3.0).
+"""Generate Roboto Mono Medium HUD atlases (fonttools 4.64.0, Pillow 12.3.0).
 
-Usage: python tools/generate_vitals_font.py path/to/Inter-variable.ttf
-Source: https://github.com/google/fonts/blob/main/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf
-Reviewed Git blob: 047c92f6e2212473dc436020afed689527076d44
+Usage: python tools/generate_vitals_font.py path/to/RobotoMono-variable.ttf
+Source: https://github.com/google/fonts/blob/main/ofl/robotomono/RobotoMono%5Bwght%5D.ttf
+Reviewed Git blob: f21d1d716bce3cc756bc618d32be71ce6f733f81
 Derivatives are named Rapids Vitals and remain under SIL OFL 1.1.
 """
 import hashlib
@@ -16,15 +16,15 @@ from PIL import Image, ImageDraw, ImageFont
 
 source = Path(sys.argv[1])
 data = source.read_bytes()
-assert hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest() == "047c92f6e2212473dc436020afed689527076d44"
-font = instantiateVariableFont(TTFont(source, recalcTimestamp=False), {"wght": 500, "opsz": 14}, inplace=True)
+assert hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest() == "f21d1d716bce3cc756bc618d32be71ce6f733f81"
+font = instantiateVariableFont(TTFont(source, recalcTimestamp=False), {"wght": 500}, inplace=True)
 options = subset.Options()
 options.name_IDs = [0, 1, 2, 3, 4, 5, 6, 13, 14, 16, 17]
 options.name_legacy = True
 subsetter = subset.Subsetter(options=options)
 subsetter.populate(unicodes=range(32, 127))
 subsetter.subset(font)
-names = {1: "Rapids Vitals", 2: "Regular", 3: "RapidsVitals-Medium-2",
+names = {1: "Rapids Vitals", 2: "Regular", 3: "RapidsVitals-Mono-Medium-3",
          4: "Rapids Vitals Medium", 6: "RapidsVitals-Medium", 16: "Rapids Vitals", 17: "Medium"}
 for record in font["name"].names:
     if record.nameID in names:
@@ -44,7 +44,7 @@ advances = []
 for code in range(32, 127):
     character = chr(code)
     natural = raster_font.getlength(character) / master_scale
-    advance = 6.0 if character.isdigit() else natural
+    advance = 2.5 if character == "." else 6.0
     advances.append(round(advance, 5))
     slot = code - 32
     x = (slot % 16 * cell + padding + (advance - natural) / 2) * master_scale
