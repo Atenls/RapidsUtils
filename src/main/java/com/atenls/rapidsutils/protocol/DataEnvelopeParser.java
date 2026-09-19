@@ -7,7 +7,6 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -45,20 +44,27 @@ public final class DataEnvelopeParser {
                 return Optional.empty();
             }
 
-            PayloadData duration = convert(root.get("duration"), 0);
-            PayloadData index = convert(root.get("index"), 0);
-            PayloadData x = convert(root.get("x"), 0);
-            PayloadData y = convert(root.get("y"), 0);
-            PayloadData opacity = convert(root.get("opacity"), 0);
-            PayloadData fadeIn = convert(root.get("fadeIn"), 0);
-            PayloadData fadeOut = convert(root.get("fadeOut"), 0);
+            PayloadData duration = controlValue(root.get("duration"));
+            PayloadData index = controlValue(root.get("index"));
+            PayloadData x = controlValue(root.get("x"));
+            PayloadData y = controlValue(root.get("y"));
+            PayloadData opacity = controlValue(root.get("opacity"));
+            PayloadData fadeIn = controlValue(root.get("fadeIn"));
+            PayloadData fadeOut = controlValue(root.get("fadeOut"));
             PayloadData data = convert(root.get("data"), 0);
             return Optional.of(new DataEnvelope(
                     version, topic, sequence, true, duration, index, x, y, opacity, fadeIn, fadeOut, data
             ));
-        } catch (JsonParseException | ArithmeticException | IllegalStateException | ClassCastException e) {
+        } catch (JsonParseException | NumberFormatException | ArithmeticException | IllegalStateException | ClassCastException e) {
             return Optional.empty();
         }
+    }
+
+    private static PayloadData controlValue(JsonElement element) {
+        if (element != null && element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()) {
+            ProtocolNumber.parse(element.getAsString());
+        }
+        return convert(element, 0);
     }
 
     private static PayloadData convert(JsonElement element, int depth) {
@@ -106,7 +112,7 @@ public final class DataEnvelopeParser {
         if (element == null || !element.isJsonPrimitive() || !element.getAsJsonPrimitive().isNumber()) {
             return null;
         }
-        return new BigDecimal(element.getAsString()).longValueExact();
+        return ProtocolNumber.parse(element.getAsString()).longValueExact();
     }
 
     private static String string(JsonElement element) {

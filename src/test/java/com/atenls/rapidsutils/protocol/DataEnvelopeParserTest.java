@@ -1,14 +1,64 @@
 package com.atenls.rapidsutils.protocol;
 
+import com.atenls.rapidsutils.state.TopicSnapshotStore;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DataEnvelopeParserTest {
+    private static final String NUMERIC_PAYLOAD = """
+            {"version":1,"topic":"probe","sequence":1,"full":true,
+             "duration":1,"index":1,"x":1,"y":1,"opacity":1,"fadeIn":1,"fadeOut":1,
+             "data":{"display":"unchanged"}}
+            """;
+
+    @Test
+    void rejectsExtremeNumbersInEveryControlFieldWithoutThrowing() {
+        for (String field : java.util.List.of("version", "sequence", "duration", "index", "x", "y",
+                "opacity", "fadeIn", "fadeOut")) {
+            for (String raw : java.util.List.of("1.1e-2147483647", "1e1000000", "1e-1000000",
+                    "9".repeat(129), "1e+" + "0".repeat(254) + "1")) {
+                String json = NUMERIC_PAYLOAD.replace("\"" + field + "\":1", "\"" + field + "\":" + raw);
+                assertTrue(DataEnvelopeParser.parse(json).isEmpty(), field + "=" + raw);
+            }
+        }
+    }
+
+    @Test
+    void invalidControlNumberLeavesSnapshotAndSequenceUntouched() {
+        TopicSnapshotStore store = new TopicSnapshotStore(() -> 0L);
+        DataEnvelopeParser.parse(NUMERIC_PAYLOAD).ifPresent(store::apply);
+        var before = store.snapshot();
+        String next = NUMERIC_PAYLOAD.replace("\"sequence\":1", "\"sequence\":2");
+
+        DataEnvelopeParser.parse(next.replace("\"duration\":1", "\"duration\":1.1e-2147483647"))
+                .ifPresent(store::apply);
+        assertSame(before, store.snapshot());
+        assertEquals(TopicSnapshotStore.UpdateResult.ACCEPTED, store.apply(DataEnvelopeParser.parse(next).orElseThrow()));
+    }
+
+    @Test
+    void acceptsBoundedScientificNumbersAndPreservesArbitraryDataNumbers() {
+        String json = NUMERIC_PAYLOAD
+                .replace("\"sequence\":1", "\"sequence\":9223372036854775807")
+                .replace("\"duration\":1", "\"duration\":1e128")
+                .replace("\"index\":1", "\"index\":" + "9".repeat(128) + "e128")
+                .replace("\"x\":1", "\"x\":1e-128")
+                .replace("\"display\":\"unchanged\"", "\"display\":1.1e-2147483647");
+        DataEnvelope envelope = DataEnvelopeParser.parse(json).orElseThrow();
+        assertEquals(Long.MAX_VALUE, envelope.sequence());
+        assertTrue(Double.isFinite(envelope.durationTicks().orElseThrow().doubleValue()));
+        assertTrue(Double.isFinite(envelope.sortIndex().orElseThrow().doubleValue()));
+        assertTrue(envelope.resolvedScreenX(320).orElseThrow().doubleValue() > 0.0D);
+        var data = assertInstanceOf(PayloadData.ObjectValue.class, envelope.data());
+        assertEquals("1.1e-2147483647", assertInstanceOf(PayloadData.ScalarValue.class, data.values().get("display")).value());
+    }
+
     @Test
     void parsesArbitraryNestedDataIntoImmutableValues() {
         Optional<DataEnvelope> parsed = DataEnvelopeParser.parse("""

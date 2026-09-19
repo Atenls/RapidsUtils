@@ -46,6 +46,6 @@ public final class PlayerVitalsParser {
         if (element == null || !element.isJsonPrimitive() || !element.getAsJsonPrimitive().isNumber()) {
             return null;
         }
-        return new BigDecimal(element.getAsString());
+        return ProtocolNumber.parse(element.getAsString());
     }
 }

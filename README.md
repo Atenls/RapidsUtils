@@ -55,6 +55,8 @@ GuoScript sends the base shape from `sendClientData(player, topic, data, duratio
 
 Malformed messages, unsupported versions, partial updates, and stale sequences are ignored. Topic snapshots and sequence baselines are cleared when the client world changes or the connection closes. Clearing on a world change allows a Velocity/Bungee-style backend switch to accept the new server's sequence range even though the client remains connected to the proxy. Legacy Minecraft colors (`§0`-`§f`), `§r`, and `§x§R§R§G§G§B§B` colors in string values are displayed directly. Templates also support RGB colors in the form `&#rrggbb`.
 
+Numeric envelope control fields (`version`, `sequence`, `duration`, `index`, `x`, `y`, `opacity`, `fadeIn`, and `fadeOut`) are validated before a snapshot is accepted. Each number may contain at most 256 characters and 128 significant digits, with a decimal scale between -128 and 128 inclusive (scale is fractional digits minus the exponent). Out-of-range numbers reject the entire message and preserve the last valid snapshot and sequence. Existing null/non-numeric fallback rules remain unchanged. These arithmetic limits do not truncate arbitrary `data` values or template text.
+
 ## Player vitals override
 
 The `rapidsclientdata:player` message body is a separate UTF-8 JSON document containing all six numeric fields:
@@ -83,6 +85,8 @@ Rebuild the static font and atlases with `python tools/generate_vitals_font.py p
 Only the rounded and compacted current value is drawn in each bar. Maximum and regeneration values remain part of the required payload and still determine fill ratios where applicable, but are no longer rendered as text.
 
 All six keys are required and must be JSON numbers. Invalid messages are ignored without replacing the last valid snapshot. The override is cleared on a client-world change or disconnect, so the vanilla health row returns until another valid `rapidsclientdata:player` message arrives.
+
+All six player-vitals numbers use the same character, precision, and scale limits as numeric envelope control fields, preventing extreme exponents from reaching ratio calculations or value formatting.
 
 ## HUD and configuration
 
