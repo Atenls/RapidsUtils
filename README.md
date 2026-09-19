@@ -126,3 +126,11 @@ $env:JAVA_HOME = 'D:\MC\jdk-21.0.10'
 ```
 
 The remapped client mod is written to `build/libs/rapidsutils-20260909-0730.jar`.
+
+### GitHub Actions
+
+The [Build workflow](.github/workflows/build.yml) runs on pushes to `master`, pull requests targeting `master`, and manual dispatches. It uses Java 21 and the committed Gradle Wrapper to run `build`, including unit tests and the remapped client JAR. Gradle dependencies are cached between runs; no custom secrets are required.
+
+After pushing the workflow to GitHub, open **Actions → Build → a successful run → Artifacts** and download `rapidsutils-<commit SHA>`. Extract the ZIP and put the contained JAR in the client's `mods` directory. Source and development JARs are excluded. Build artifacts are retained for 30 days, and test reports for 14 days (also uploaded after test failures when available).
+
+To build manually, open **Actions → Build → Run workflow**. The workflow must be present on the default branch for this button to appear. Artifacts belong to individual workflow runs; this workflow does not publish GitHub Releases.
