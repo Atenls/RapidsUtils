@@ -17,6 +17,73 @@ class TopicSnapshotStoreTest {
     private static final PayloadData NULL = new PayloadData.ScalarValue(PayloadData.ScalarKind.NULL, "null");
 
     @Test
+    void capsDistinctActiveTopicsWithoutEvictingExistingSnapshots() {
+        TopicSnapshotStore store = new TopicSnapshotStore(() -> 0L);
+        for (int i = 0; i < TopicSnapshotStore.MAX_TRACKED_TOPICS; i++) {
+            assertEquals(TopicSnapshotStore.UpdateResult.ACCEPTED,
+                    store.apply(envelope("topic-" + i, 1, number("-1"), NULL)));
+        }
+        var full = store.snapshot();
+        assertEquals(TopicSnapshotStore.MAX_TRACKED_TOPICS, full.topics().size());
+        assertEquals(TopicSnapshotStore.UpdateResult.CAPACITY_REACHED, store.apply(envelope("overflow", 1)));
+        assertSame(full, store.snapshot());
+        assertEquals(TopicSnapshotStore.UpdateResult.STALE, store.apply(envelope("topic-0", 1)));
+        assertEquals(TopicSnapshotStore.UpdateResult.ACCEPTED, store.apply(envelope("topic-0", 2)));
+        assertEquals(TopicSnapshotStore.MAX_TRACKED_TOPICS, store.snapshot().topics().size());
+    }
+
+    @Test
+    void removalOnlyTrafficIsBoundedWhileKnownTopicsRemainUsable() {
+        TopicSnapshotStore store = new TopicSnapshotStore(() -> 0L);
+        fillWithRemovalMessages(store);
+        var emptyButFull = store.snapshot();
+        assertTrue(emptyButFull.topics().isEmpty());
+        for (int i = 0; i < 100; i++) {
+            assertEquals(TopicSnapshotStore.UpdateResult.CAPACITY_REACHED,
+                    store.apply(envelope("overflow-" + i, 100, NULL, NULL, NULL)));
+        }
+        assertSame(emptyButFull, store.snapshot());
+        assertEquals(TopicSnapshotStore.UpdateResult.STALE, store.apply(envelope("topic-0", 1)));
+        assertEquals(TopicSnapshotStore.UpdateResult.ACCEPTED, store.apply(envelope("topic-0", 2)));
+        assertEquals(TopicSnapshotStore.UpdateResult.REMOVED, store.apply(envelope("topic-0", 3, NULL, NULL, EMPTY)));
+        assertEquals(TopicSnapshotStore.UpdateResult.STALE, store.apply(envelope("topic-0", 2)));
+        assertEquals(TopicSnapshotStore.UpdateResult.CAPACITY_REACHED, store.apply(envelope("overflow", 1)));
+        assertEquals(TopicSnapshotStore.UpdateResult.ACCEPTED, store.apply(envelope("topic-0", 4)));
+    }
+
+    @Test
+    void expiryKeepsCapacityAccountingAndRejectsStaleResurrection() {
+        AtomicLong clock = new AtomicLong(100L);
+        TopicSnapshotStore store = new TopicSnapshotStore(clock::get);
+        fillWithRemovalMessages(store);
+        store.apply(envelope("topic-0", 2, number("20"), NULL));
+        clock.set(135L);
+        store.expireCompleted();
+        assertTrue(store.snapshot().topics().isEmpty());
+        assertEquals(TopicSnapshotStore.UpdateResult.CAPACITY_REACHED, store.apply(envelope("overflow", 1)));
+        assertEquals(TopicSnapshotStore.UpdateResult.STALE, store.apply(envelope("topic-0", 2)));
+        assertEquals(TopicSnapshotStore.UpdateResult.ACCEPTED, store.apply(envelope("topic-0", 3)));
+        assertEquals(135L, store.snapshot().topics().get("topic-0").firstReceivedAtTick());
+    }
+
+    @Test
+    void worldOrDisconnectResetReleasesCapacityAndSequenceBaselines() {
+        TopicSnapshotStore store = new TopicSnapshotStore(() -> 0L);
+        fillWithRemovalMessages(store);
+        assertEquals(TopicSnapshotStore.UpdateResult.CAPACITY_REACHED, store.apply(envelope("new-world", 100)));
+        store.clear();
+        assertEquals(TopicSnapshotStore.UpdateResult.ACCEPTED, store.apply(envelope("new-world", 1)));
+        assertEquals(TopicSnapshotStore.UpdateResult.ACCEPTED, store.apply(envelope("topic-0", 0)));
+    }
+
+    private static void fillWithRemovalMessages(TopicSnapshotStore store) {
+        for (int i = 0; i < TopicSnapshotStore.MAX_TRACKED_TOPICS; i++) {
+            assertEquals(TopicSnapshotStore.UpdateResult.REMOVED,
+                    store.apply(envelope("topic-" + i, 1, NULL, NULL, i % 2 == 0 ? NULL : EMPTY)));
+        }
+    }
+
+    @Test
     void updatesTopicsIndependentlyWithoutChangingStableDefaultOrder() {
         AtomicLong clock = new AtomicLong(1_000L);
         TopicSnapshotStore store = new TopicSnapshotStore(clock::get);

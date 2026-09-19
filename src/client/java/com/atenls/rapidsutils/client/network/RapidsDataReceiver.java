@@ -24,7 +24,14 @@ public final class RapidsDataReceiver {
         PayloadTypeRegistry.playS2C().register(RapidsPlayerPayload.ID, RapidsPlayerPayload.CODEC);
         ClientPlayNetworking.registerGlobalReceiver(RapidsDataPayload.ID, (payload, context) ->
                 DataEnvelopeParser.parse(payload.json()).ifPresentOrElse(
-                        store::apply,
+                        envelope -> {
+                            if (store.apply(envelope) == TopicSnapshotStore.UpdateResult.CAPACITY_REACHED) {
+                                RapidsUtilsClient.LOGGER.debug(
+                                        "Ignored new rapidsclientdata:data topic: session topic limit ({}) reached",
+                                        TopicSnapshotStore.MAX_TRACKED_TOPICS
+                                );
+                            }
+                        },
                         () -> RapidsUtilsClient.LOGGER.debug("Ignored invalid rapidsclientdata:data payload")
                 ));
         ClientPlayNetworking.registerGlobalReceiver(RapidsPlayerPayload.ID, (payload, context) ->

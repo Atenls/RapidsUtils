@@ -12,6 +12,7 @@ import java.util.function.Function;
 import java.util.function.LongSupplier;
 
 public final class TopicSnapshotStore {
+    public static final int MAX_TRACKED_TOPICS = 1_024;
     private static final BigDecimal DEFAULT_DURATION_TICKS = BigDecimal.valueOf(60L);
     private final AtomicReference<State> current = new AtomicReference<>(State.empty());
     private final LongSupplier tickCounter;
@@ -32,6 +33,10 @@ public final class TopicSnapshotStore {
             Long previousSequence = before.sequences().get(envelope.topic());
             if (previousSequence != null && envelope.sequence() <= previousSequence) {
                 return UpdateResult.STALE;
+            }
+            // Count tombstones too: evicting them would let old packets resurrect deleted topics.
+            if (previousSequence == null && before.sequences().size() >= MAX_TRACKED_TOPICS) {
+                return UpdateResult.CAPACITY_REACHED;
             }
 
             Map<String, TopicSnapshot> updatedTopics = new LinkedHashMap<>(before.dashboard().topics());
@@ -136,6 +141,7 @@ public final class TopicSnapshotStore {
     public enum UpdateResult {
         ACCEPTED,
         REMOVED,
-        STALE
+        STALE,
+        CAPACITY_REACHED
     }
 }

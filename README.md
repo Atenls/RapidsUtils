@@ -58,6 +58,8 @@ Malformed messages, unsupported versions, partial updates, and stale sequences a
 
 Numeric envelope control fields (`version`, `sequence`, `duration`, `index`, `x`, `y`, `opacity`, `fadeIn`, and `fadeOut`) are validated before a snapshot is accepted. Each number may contain at most 256 characters and 128 significant digits, with a decimal scale between -128 and 128 inclusive (scale is fractional digits minus the exponent). Out-of-range numbers reject the entire message and preserve the last valid snapshot and sequence. Existing null/non-numeric fallback rules remain unchanged. These arithmetic limits do not truncate arbitrary `data` values or template text.
 
+At most 1,024 distinct topic IDs are tracked between world changes or disconnects. Deleted and expired topics still occupy a slot to retain their sequence baselines, including IDs first seen in a removal message. Once full, messages for new IDs are ignored and a debug log records the capacity rejection; existing IDs can still be updated, removed, or reactivated with a newer sequence. No existing topic or sequence baseline is evicted to make room. World changes and disconnects clear both the data and capacity accounting. Servers should reuse fixed business topic IDs rather than generate a new ID for each event.
+
 ## Player vitals override
 
 The `rapidsclientdata:player` message body is a separate UTF-8 JSON document containing all six numeric fields:
