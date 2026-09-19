@@ -8,6 +8,8 @@ import java.math.BigDecimal;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TopicSnapshotStoreTest {
@@ -20,16 +22,16 @@ class TopicSnapshotStoreTest {
         TopicSnapshotStore store = new TopicSnapshotStore(clock::get);
 
         assertEquals(TopicSnapshotStore.UpdateResult.ACCEPTED, store.apply(envelope("dungeon", 8)));
-        clock.set(1_250L);
+        clock.set(1_025L);
         assertEquals(TopicSnapshotStore.UpdateResult.ACCEPTED, store.apply(envelope("boss", 2)));
-        clock.set(1_500L);
+        clock.set(1_050L);
         assertEquals(TopicSnapshotStore.UpdateResult.ACCEPTED, store.apply(envelope("dungeon", 9)));
 
         assertEquals(java.util.List.of("dungeon", "boss"), store.snapshot().orderedForHud(topic -> 10).stream()
                 .map(snapshot -> snapshot.envelope().topic())
                 .toList());
         assertEquals(9, store.snapshot().topics().get("dungeon").envelope().sequence());
-        assertEquals(1_500L, store.snapshot().topics().get("dungeon").receivedAtTick());
+        assertEquals(1_050L, store.snapshot().topics().get("dungeon").receivedAtTick());
     }
 
     @Test
@@ -112,6 +114,119 @@ class TopicSnapshotStoreTest {
     }
 
     @Test
+    void tickMaintenanceExpiresWithoutRenderingAndPreservesSequenceBaselines() {
+        AtomicLong clock = new AtomicLong(100L);
+        TopicSnapshotStore store = new TopicSnapshotStore(clock::get);
+        store.apply(envelope("notice", 4, number("20"), NULL));
+        store.apply(envelope("persistent", 1, number("-1"), NULL));
+        var before = store.snapshot();
+
+        clock.set(134L);
+        store.expireCompleted();
+        assertSame(before, store.snapshot());
+        clock.set(135L);
+        store.expireCompleted();
+        assertEquals(java.util.Set.of("persistent"), store.snapshot().topics().keySet());
+        assertEquals(TopicSnapshotStore.UpdateResult.STALE, store.apply(envelope("notice", 4)));
+        assertEquals(TopicSnapshotStore.UpdateResult.ACCEPTED, store.apply(envelope("notice", 5)));
+        assertEquals(135L, store.snapshot().topics().get("notice").firstReceivedAtTick());
+    }
+
+    @Test
+    void updateAfterFadeCompletionRestartsBeforeCleanupAndMovesToNewFirstSeenOrder() {
+        AtomicLong clock = new AtomicLong(100L);
+        TopicSnapshotStore store = new TopicSnapshotStore(clock::get);
+        store.apply(envelope("notice", 1, number("20"), NULL));
+        store.apply(envelope("persistent", 1, number("-1"), NULL));
+
+        clock.set(135L);
+        store.apply(envelopeWithFade("notice", 2, number("20"), "10", "15"));
+        TopicSnapshot updated = store.snapshot().topics().get("notice");
+        assertEquals(135L, updated.firstReceivedAtTick());
+        assertEquals(new BigDecimal("10"), updated.fadeInTicks());
+        assertEquals(0.0F, updated.fadeFactorAt(135.0D, BigDecimal.valueOf(60L)));
+        assertEquals(0.5F, updated.fadeFactorAt(140.0D, BigDecimal.valueOf(60L)));
+        assertEquals(java.util.List.of("persistent", "notice"),
+                store.snapshot().orderedForHud(topic -> 10).stream().map(s -> s.envelope().topic()).toList());
+        store.expireCompleted();
+        assertSame(updated, store.snapshot().topics().get("notice"));
+    }
+
+    @Test
+    void updateDuringFadeOutKeepsOriginalFadeInAndRefreshesExpiration() {
+        AtomicLong clock = new AtomicLong(100L);
+        TopicSnapshotStore store = new TopicSnapshotStore(clock::get);
+        store.apply(envelopeWithFade("notice", 1, number("20"), "10", "15"));
+        clock.set(134L);
+        store.apply(envelopeWithFade("notice", 2, number("20"), "40", "15"));
+
+        TopicSnapshot updated = store.snapshot().topics().get("notice");
+        assertEquals(100L, updated.firstReceivedAtTick());
+        assertEquals(new BigDecimal("10"), updated.fadeInTicks());
+        assertEquals(1.0F, updated.fadeFactorAt(134.0D, BigDecimal.valueOf(60L)));
+        clock.set(135L);
+        store.expireCompleted();
+        assertSame(updated, store.snapshot().topics().get("notice"));
+    }
+
+    @Test
+    void fallbackChangesApplyToTickExpiryAndReactivation() {
+        AtomicLong clock = new AtomicLong(100L);
+        AtomicLong fallback = new AtomicLong(100L);
+        TopicSnapshotStore store = new TopicSnapshotStore(clock::get, topic -> BigDecimal.valueOf(fallback.get()));
+        store.apply(envelope("cleanup", 1));
+        store.apply(envelope("update", 1));
+        clock.set(140L);
+        store.expireCompleted();
+        assertEquals(2, store.snapshot().topics().size());
+
+        fallback.set(20L);
+        store.apply(envelope("update", 2));
+        assertEquals(140L, store.snapshot().topics().get("update").firstReceivedAtTick());
+        store.expireCompleted();
+        assertEquals(java.util.Set.of("update"), store.snapshot().topics().keySet());
+    }
+
+    @Test
+    void tickExpiryUsesTopicFallbacksButHonorsServerDurations() {
+        AtomicLong clock = new AtomicLong(100L);
+        TopicSnapshotStore store = new TopicSnapshotStore(clock::get,
+                topic -> BigDecimal.valueOf(topic.equals("long") ? 100L : 20L));
+        store.apply(envelope("short", 1));
+        store.apply(envelope("long", 1));
+        store.apply(envelope("server", 1, number("100"), NULL));
+        clock.set(135L);
+        store.expireCompleted();
+        assertEquals(java.util.Set.of("long", "server"), store.snapshot().topics().keySet());
+    }
+
+    @Test
+    void zeroAndFractionalFadeDurationsKeepExpirationBoundaries() {
+        AtomicLong clock = new AtomicLong(100L);
+        TopicSnapshotStore store = new TopicSnapshotStore(clock::get);
+        store.apply(envelopeWithFade("instant", 1, number("20"), "0", "0"));
+        store.apply(envelopeWithFade("fractional", 1, number("20.5"), "0", "0.5"));
+        clock.set(120L);
+        store.expireCompleted();
+        assertEquals(2, store.snapshot().topics().size());
+        clock.set(121L);
+        store.expireCompleted();
+        assertTrue(store.snapshot().topics().isEmpty());
+    }
+
+    @Test
+    void persistentTopicDoesNotRestartOnAnUpdateLongAfterArrival() {
+        AtomicLong clock = new AtomicLong(100L);
+        TopicSnapshotStore store = new TopicSnapshotStore(clock::get);
+        store.apply(envelope("persistent", 1, number("-1"), NULL));
+        clock.set(100_000L);
+        store.expireCompleted();
+        assertFalse(store.snapshot().topics().isEmpty());
+        store.apply(envelope("persistent", 2, number("-1"), NULL));
+        assertEquals(100L, store.snapshot().topics().get("persistent").firstReceivedAtTick());
+    }
+
+    @Test
     void serverFadeDurationsOverrideTheDefaults() {
         DataEnvelope envelope = new DataEnvelope(
                 DataEnvelope.CURRENT_VERSION,
@@ -177,6 +292,13 @@ class TopicSnapshotStoreTest {
                 }).stream()
                         .map(snapshot -> snapshot.envelope().topic())
                         .toList());
+    }
+
+    private static DataEnvelope envelopeWithFade(String topic, long sequence, PayloadData duration, String fadeIn, String fadeOut) {
+        DataEnvelope base = envelope(topic, sequence, duration, NULL);
+        return new DataEnvelope(base.version(), base.topic(), base.sequence(), base.full(),
+                base.duration(), base.index(), base.x(), base.y(), base.opacity(),
+                number(fadeIn), number(fadeOut), base.data());
     }
 
     private static DataEnvelope envelope(String topic, long sequence) {

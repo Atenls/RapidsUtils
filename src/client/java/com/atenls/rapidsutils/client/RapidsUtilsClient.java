@@ -20,6 +20,7 @@ import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class RapidsUtilsClient implements ClientModInitializer {
@@ -36,9 +37,15 @@ public final class RapidsUtilsClient implements ClientModInitializer {
     public void onInitializeClient() {
         RapidsConfig config = RapidsConfig.load();
         AtomicLong clientTicks = new AtomicLong();
-        TopicSnapshotStore store = new TopicSnapshotStore(clientTicks::get);
+        TopicSnapshotStore store = new TopicSnapshotStore(
+                clientTicks::get,
+                topic -> BigDecimal.valueOf(config.displaySeconds(topic)).multiply(BigDecimal.valueOf(20L))
+        );
         PlayerVitalsState playerVitals = new PlayerVitalsState();
-        ClientTickEvents.END_CLIENT_TICK.register(client -> clientTicks.incrementAndGet());
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            clientTicks.incrementAndGet();
+            store.expireCompleted();
+        });
         RapidsDataReceiver.register(store, playerVitals);
         registerKeyBindings(config);
         HudElementRegistry.replaceElement(

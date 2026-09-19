@@ -67,9 +67,6 @@ public final class RapidsHudRenderer {
                     .multiply(BigDecimal.valueOf(20L));
             float fadeFactor = snapshot.fadeFactorAt(currentTick, fallbackDurationTicks);
             if (fadeFactor <= 0.0F) {
-                if (snapshot.isExpiredAfterFadeAt(currentTick, fallbackDurationTicks)) {
-                    store.expire(envelope.topic(), envelope.sequence());
-                }
                 continue;
             }
 
