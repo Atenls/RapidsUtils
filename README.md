@@ -97,7 +97,7 @@ The HUD starts at a configurable scaled-screen margin of 5 pixels by default, fo
 
 The whole panel, including its background and text, fades as one unit. Rounded backgrounds are drawn as non-overlapping horizontal spans, so translucent pixels are blended only once. Nested data, collection length, string length, wrapping, and screen height are bounded to keep the display readable.
 
-Repeated accepted messages with exactly equal `data` for the same active topic are counted together. The HUD appends a gray ` (x2)`, ` (x3)`, and so on to the last non-blank content line, using the color of `&7`. Each repeat still refreshes the duration and applies the latest envelope settings. A different `data` value resets the count to one; removal, completed fade-out, world changes, and disconnects also reset it. Duplicate or older sequence numbers remain ignored and do not increase the count. Different topics are counted independently, and string equality includes whitespace and color codes.
+All topic snapshots retain replacement semantics. Only ordinary strings queued through GuoScript's `sendClientNotification` are stacked, on the server before it builds `hidden_notification.display`: equal complete strings share their first position and append a gray ` (x<n>)` when repeated. Each occurrence keeps its own 60-tick lifetime; numeric and item notifications keep their existing aggregation behavior. The client does not count received snapshots.
 
 On first launch the mod creates `config/rapidsutils.json`. The built-in `dungeon`, `mastery`, `update`, and `reload` topics keep their existing fallback durations and indexes, but are hidden from configuration and always render with the hard-coded `{display}{extraData}` template.
 

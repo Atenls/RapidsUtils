@@ -17,86 +17,6 @@ class TopicSnapshotStoreTest {
     private static final PayloadData NULL = new PayloadData.ScalarValue(PayloadData.ScalarKind.NULL, "null");
 
     @Test
-    void countsEqualDataWithNewerSequencesAndRefreshesTheLatestEnvelope() {
-        AtomicLong clock = new AtomicLong(100L);
-        TopicSnapshotStore store = new TopicSnapshotStore(clock::get);
-        store.apply(envelope("notice", 1, number("20"), NULL, message("&a获得物品")));
-        assertEquals(1L, store.snapshot().topics().get("notice").repeatCount());
-
-        clock.set(110L);
-        DataEnvelope repeat = envelope("notice", 2, number("40"), number("5"), message("&a获得物品"));
-        store.apply(repeat);
-        TopicSnapshot snapshot = store.snapshot().topics().get("notice");
-        assertEquals(2L, snapshot.repeatCount());
-        assertSame(repeat, snapshot.envelope());
-        assertEquals(110L, snapshot.receivedAtTick());
-        assertEquals(100L, snapshot.firstReceivedAtTick());
-
-        store.apply(envelope("notice", 3, number("40"), NULL, message("&a获得物品")));
-        assertEquals(3L, store.snapshot().topics().get("notice").repeatCount());
-        store.apply(envelope("notice", 3, NULL, NULL, message("different")));
-        store.apply(envelope("notice", 2, NULL, NULL, message("&a获得物品")));
-        assertEquals(3L, store.snapshot().topics().get("notice").repeatCount());
-    }
-
-    @Test
-    void countsTopicsIndependentlyAndRequiresExactDataIncludingColorsAndWhitespace() {
-        TopicSnapshotStore store = new TopicSnapshotStore(() -> 0L);
-        for (String topic : java.util.List.of("notice", "other")) {
-            store.apply(envelope(topic, 1, NULL, NULL, message("&a获得物品")));
-        }
-        store.apply(envelope("notice", 2, NULL, NULL, message("&a获得物品")));
-        assertEquals(2L, store.snapshot().topics().get("notice").repeatCount());
-        assertEquals(1L, store.snapshot().topics().get("other").repeatCount());
-
-        store.apply(envelope("notice", 3, NULL, NULL, message("&a获得物品 ")));
-        assertEquals(1L, store.snapshot().topics().get("notice").repeatCount());
-        store.apply(envelope("notice", 4, NULL, NULL, message("&a获得物品 ")));
-        assertEquals(2L, store.snapshot().topics().get("notice").repeatCount());
-        store.apply(envelope("notice", 5, NULL, NULL, message("§a获得物品 ")));
-        assertEquals(1L, store.snapshot().topics().get("notice").repeatCount());
-        store.apply(envelope("notice", 6, NULL, NULL, message("&a获得物品")));
-        assertEquals(1L, store.snapshot().topics().get("notice").repeatCount());
-    }
-
-    @Test
-    void resetsRepeatCountAfterCompletedFadeWithOrWithoutTickCleanup() {
-        AtomicLong clock = new AtomicLong(100L);
-        TopicSnapshotStore store = new TopicSnapshotStore(clock::get);
-        store.apply(envelope("notice", 1, number("20"), NULL));
-        clock.set(134L);
-        store.apply(envelope("notice", 2, number("20"), NULL));
-        assertEquals(2L, store.snapshot().topics().get("notice").repeatCount());
-
-        clock.set(169L);
-        store.apply(envelope("notice", 3, number("20"), NULL));
-        assertEquals(1L, store.snapshot().topics().get("notice").repeatCount());
-        store.apply(envelope("notice", 4, number("20"), NULL));
-        assertEquals(2L, store.snapshot().topics().get("notice").repeatCount());
-        clock.set(204L);
-        store.expireCompleted();
-        store.apply(envelope("notice", 5, number("20"), NULL));
-        assertEquals(1L, store.snapshot().topics().get("notice").repeatCount());
-    }
-
-    @Test
-    void resetsRepeatCountAfterRemovalAndWorldOrConnectionClear() {
-        TopicSnapshotStore store = new TopicSnapshotStore(() -> 0L);
-        store.apply(envelope("notice", 1));
-        store.apply(envelope("notice", 2));
-        assertEquals(2L, store.snapshot().topics().get("notice").repeatCount());
-        store.apply(envelope("notice", 3, NULL, NULL, NULL));
-        store.apply(envelope("notice", 4));
-        assertEquals(1L, store.snapshot().topics().get("notice").repeatCount());
-
-        store.apply(envelope("notice", 5));
-        assertEquals(2L, store.snapshot().topics().get("notice").repeatCount());
-        store.clear();
-        store.apply(envelope("notice", 1));
-        assertEquals(1L, store.snapshot().topics().get("notice").repeatCount());
-    }
-
-    @Test
     void capsDistinctActiveTopicsWithoutEvictingExistingSnapshots() {
         TopicSnapshotStore store = new TopicSnapshotStore(() -> 0L);
         for (int i = 0; i < TopicSnapshotStore.MAX_TRACKED_TOPICS; i++) {
@@ -473,11 +393,5 @@ class TopicSnapshotStoreTest {
 
     private static PayloadData number(String value) {
         return new PayloadData.ScalarValue(PayloadData.ScalarKind.NUMBER, value);
-    }
-
-    private static PayloadData message(String value) {
-        return new PayloadData.ObjectValue(java.util.Map.of(
-                "display", new PayloadData.ScalarValue(PayloadData.ScalarKind.STRING, value)
-        ));
     }
 }

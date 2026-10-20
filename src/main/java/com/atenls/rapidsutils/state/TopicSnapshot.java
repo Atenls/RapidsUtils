@@ -8,16 +8,11 @@ public record TopicSnapshot(
         DataEnvelope envelope,
         long receivedAtTick,
         long firstReceivedAtTick,
-        BigDecimal fadeInTicks,
-        long repeatCount
+        BigDecimal fadeInTicks
 ) {
     private static final BigDecimal PERSISTENT_DURATION = BigDecimal.valueOf(-1L);
     private static final BigDecimal DEFAULT_FADE_IN_TICKS = BigDecimal.valueOf(5L);
     private static final BigDecimal DEFAULT_FADE_OUT_TICKS = BigDecimal.valueOf(15L);
-
-    public TopicSnapshot(DataEnvelope envelope, long receivedAtTick, long firstReceivedAtTick, BigDecimal fadeInTicks) {
-        this(envelope, receivedAtTick, firstReceivedAtTick, fadeInTicks, 1L);
-    }
 
     public TopicSnapshot(DataEnvelope envelope, long receivedAtTick) {
         this(

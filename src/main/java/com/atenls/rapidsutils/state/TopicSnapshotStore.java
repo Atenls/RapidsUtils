@@ -57,10 +57,7 @@ public final class TopicSnapshotStore {
                                 envelope,
                                 receivedAtTick,
                                 previous.firstReceivedAtTick(),
-                                previous.fadeInTicks(),
-                                previous.envelope().data().equals(envelope.data())
-                                        ? (previous.repeatCount() == Long.MAX_VALUE ? Long.MAX_VALUE : previous.repeatCount() + 1L)
-                                        : 1L
+                                previous.fadeInTicks()
                         );
                 updatedTopics.put(envelope.topic(), updated);
             }
