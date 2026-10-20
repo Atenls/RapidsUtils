@@ -79,7 +79,7 @@ public final class RapidsHudRenderer {
                 continue;
             }
 
-            List<HudLine> logicalLines = linesFor(envelope);
+            List<HudLine> logicalLines = linesFor(snapshot);
             RenderPanel panel = layoutPanel(textRenderer, logicalLines, panelMaxWidth, availableHeight);
             if (panel.rows().isEmpty()) {
                 continue;
@@ -117,6 +117,20 @@ public final class RapidsHudRenderer {
                 stackedY += panel.height() + PANEL_GAP;
             }
         }
+    }
+
+    private List<HudLine> linesFor(TopicSnapshot snapshot) {
+        ArrayList<HudLine> lines = new ArrayList<>(linesFor(snapshot.envelope()));
+        if (snapshot.repeatCount() > 1L) {
+            for (int index = lines.size() - 1; index >= 0; index--) {
+                HudLine line = lines.get(index);
+                if (line.spans().stream().anyMatch(span -> !span.text().isBlank())) {
+                    lines.set(index, line.withRepeatCount(snapshot.repeatCount()));
+                    break;
+                }
+            }
+        }
+        return List.copyOf(lines);
     }
 
     private List<HudLine> linesFor(DataEnvelope envelope) {
