@@ -2,6 +2,8 @@ package com.atenls.rapidsutils.client;
 
 import com.atenls.rapidsutils.client.network.RapidsDataReceiver;
 import com.atenls.rapidsutils.client.config.RapidsConfig;
+import com.atenls.rapidsutils.client.equipment.EquipmentAttributeDisplays;
+import com.atenls.rapidsutils.client.equipment.DpimEquipmentReader;
 import com.atenls.rapidsutils.client.render.PlayerVitalsHudRenderer;
 import com.atenls.rapidsutils.client.render.RapidsHudRenderer;
 import com.atenls.rapidsutils.state.PlayerVitalsState;
@@ -9,6 +11,7 @@ import com.atenls.rapidsutils.state.TopicSnapshotStore;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudStatusBarHeightRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
@@ -36,6 +39,8 @@ public final class RapidsUtilsClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         RapidsConfig config = RapidsConfig.load();
+        EquipmentAttributeDisplays.load();
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> DpimEquipmentReader.clear());
         AtomicLong clientTicks = new AtomicLong();
         TopicSnapshotStore store = new TopicSnapshotStore(
                 clientTicks::get,

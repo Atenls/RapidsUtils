@@ -118,6 +118,41 @@ Template variables use `{variable}` syntax. `{rhombus}` is built in and renders 
 
 No configuration library is required. If optional Mod Menu 17.0.0 is installed, open RapidsUtils from the Mods screen to edit global HUD options, cycle the player-vitals bar style, open a topic to edit its fallback display duration, fallback sort index, and multiline template together, or use **Add topic** to create another client-side topic definition. The JSON file remains directly editable without Mod Menu.
 
+## Equipment comparison
+
+Hover a DPItemManager equipment item in your own inventory slots to see a second native Minecraft tooltip beside the original. This also works for your inventory slots while a container is open. Container contents, server menu icons, and creative catalog entries do not trigger comparisons. The feature is enabled by default and can be toggled independently of the HUD in Mod Menu, or with `equipmentComparison` in `config/rapidsutils.json`.
+
+Armor compares against the matching head/chest/legs/feet slot; shields compare against the off hand. Swords, axes, spears, bows, crossbows, tridents, maces, and custom items with a nonblank DPIM `tags.weapon-type` compare against the main hand. Hovering the actual equipped item does not compare it to itself. An empty equipment slot contributes zero; non-DPIM equipment contributes zero DPIM attributes and is identified as such in the panel.
+
+Each row shows **equipped → hovered (difference)**. Base attributes and every affix's attributes, including socketed runes, are added together from `minecraft:custom_data.PublicBukkitValues` (`dpitemmanager:attrs` / `dpitemmanager:affixes`). No Lore parsing is involved. Raw and percentage attribute channels remain separate, and percentage channels use `min`, matching DPIM's aggregation. Green indicates improvement and red indicates loss; mixed range changes and unchanged values are gray. `MANA_USE`, for example, uses the lower-is-better direction from the display configuration. Both sides' set bonuses are excluded, including any attribute explicitly marked with source `SET`. This is an item attribute comparison, rather than a forecast of final damage, player attribute caps, or eligibility restrictions.
+
+The primary tooltip retains its original text, additional tooltip data, and tooltip style. The comparison uses the vanilla tooltip background and font. Panels use available space to the right or left, move together at screen edges, and scale together only when necessary to fit both panels on screen.
+
+Attribute names, icons, units, colors (the first color for a gradient), percentage formatting, and better-value direction are bundled from DPItemManager's `attribute-display.yml` as `assets/rapidsutils/equipment_attributes.json`. This is a bundled configuration snapshot, not automatic synchronization with a server. Unknown keys fall back to the PDC display name/key. After changing server display definitions, rebuild this snapshot or add per-key overrides in `config/rapidsutils-equipment-attributes.json`, then restart the client:
+
+```json
+{
+  "MANA_USE": {
+    "name": "法力消耗",
+    "icon": "⚶ ",
+    "suffix": " P/t",
+    "color": 13672544,
+    "percent": false,
+    "lowerIsBetter": true
+  }
+}
+```
+
+`tools/ExportEquipmentAttributes.java` regenerates the snapshot using Java 21 with Gson and SnakeYAML on the classpath; these are exporter dependencies only and are not added to the mod:
+
+```powershell
+& "$env:JAVA_HOME/bin/java.exe" --class-path "$gsonJar;$snakeYamlJar" `
+  tools/ExportEquipmentAttributes.java ../DPItemManager/src/main/resources/attribute-display.yml `
+  src/main/resources/assets/rapidsutils/equipment_attributes.json
+```
+
+The server must preserve the DPIM PDC in the item data it sends to the client. Malformed managed items are skipped rather than compared using partial attribute totals.
+
 ## Build
 
 On Windows:

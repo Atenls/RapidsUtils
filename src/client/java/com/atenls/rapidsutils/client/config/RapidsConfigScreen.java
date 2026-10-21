@@ -17,6 +17,7 @@ public final class RapidsConfigScreen extends Screen {
     private final Screen parent;
     private final RapidsConfig config;
     private boolean enabled;
+    private boolean equipmentComparison;
     private float backgroundOpacity;
     private int margin;
     private int maxWidth;
@@ -28,6 +29,7 @@ public final class RapidsConfigScreen extends Screen {
         this.parent = parent;
         this.config = RapidsConfig.get();
         this.enabled = config.enabled;
+        this.equipmentComparison = config.equipmentComparison;
         this.backgroundOpacity = config.backgroundOpacity;
         this.margin = config.margin;
         this.maxWidth = config.maxWidth;
@@ -43,7 +45,13 @@ public final class RapidsConfigScreen extends Screen {
                     enabled = !enabled;
                     button.setMessage(enabledMessage());
                 })
-                .dimensions(controlX, y, CONTROL_WIDTH, CONTROL_HEIGHT)
+                .dimensions(controlX, y, 136, CONTROL_HEIGHT)
+                .build());
+        addDrawableChild(ButtonWidget.builder(comparisonMessage(), button -> {
+                    equipmentComparison = !equipmentComparison;
+                    button.setMessage(comparisonMessage());
+                })
+                .dimensions(controlX + 144, y, 136, CONTROL_HEIGHT)
                 .build());
         addDrawableChild(new ConfigSlider(controlX, y + 24, opacityMessage(), opacityToSlider(backgroundOpacity)) {
             @Override
@@ -149,6 +157,7 @@ public final class RapidsConfigScreen extends Screen {
 
     private void saveAndClose() {
         config.enabled = enabled;
+        config.equipmentComparison = equipmentComparison;
         config.backgroundOpacity = backgroundOpacity;
         config.margin = margin;
         config.maxWidth = maxWidth;
@@ -166,6 +175,10 @@ public final class RapidsConfigScreen extends Screen {
 
     private Text enabledMessage() {
         return Text.literal("HUD 显示：" + (enabled ? "开启" : "关闭"));
+    }
+
+    private Text comparisonMessage() {
+        return Text.literal("装备比对：" + (equipmentComparison ? "开启" : "关闭"));
     }
 
     private Text opacityMessage() {

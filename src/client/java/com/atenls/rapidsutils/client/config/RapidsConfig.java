@@ -31,6 +31,7 @@ public final class RapidsConfig {
     private static RapidsConfig loaded;
 
     public boolean enabled = true;
+    public boolean equipmentComparison = true;
     public int margin = 5;
     public float backgroundOpacity = 0.6F;
     public int maxWidth = 300;

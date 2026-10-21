@@ -3,13 +3,14 @@
   "id": "rapidsutils",
   "version": "${version}",
   "name": "RapidsUtils",
-  "description": "Client HUD for Rapids. Updated 2026-10-21 00:16 +08:00.",
+  "description": "Client HUD and equipment comparison for Rapids. Updated 2026-10-22 07:05 +08:00.",
   "authors": [
     "Atenls"
   ],
   "icon": "assets/rapidsutils/icon.png",
   "license": "MIT",
   "environment": "client",
+  "mixins": ["rapidsutils.client.mixins.json"],
   "entrypoints": {
     "client": [
       "com.atenls.rapidsutils.client.RapidsUtilsClient"

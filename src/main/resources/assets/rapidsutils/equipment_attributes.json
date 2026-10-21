@@ -1,0 +1,458 @@
+{
+  "NATURE_FORTUNE": {
+    "name": "自然馈赠",
+    "icon": "",
+    "suffix": "",
+    "color": 13402316,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "HEALTH": {
+    "name": "最大生命",
+    "icon": "❤ ",
+    "suffix": "",
+    "color": 43520,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "HEALTH_PERCENT": {
+    "name": "最大生命",
+    "icon": "❤ ",
+    "suffix": "",
+    "color": 43520,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "HEALTH_REGEN": {
+    "name": "生命恢复",
+    "icon": "❤ ",
+    "suffix": " 点/秒",
+    "color": 6352992,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "health_steal": {
+    "name": "生命偷取",
+    "icon": "❤ ",
+    "suffix": " &7/4s",
+    "color": 11542560,
+    "percent": true,
+    "lowerIsBetter": false
+  },
+  "EXP_BOOST": {
+    "name": "经验加成",
+    "icon": "📖 ",
+    "suffix": "",
+    "color": 14524637,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "EXP_BOOST_PERCENT": {
+    "name": "经验加成",
+    "icon": "📖 ",
+    "suffix": "",
+    "color": 14524637,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "MELEE_ATTACK": {
+    "name": "近战攻击",
+    "icon": "⚔ ",
+    "suffix": "",
+    "color": 16724016,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "MELEE_ATTACK_PERCENT": {
+    "name": "近战攻击",
+    "icon": "⚔ ",
+    "suffix": "",
+    "color": 16724016,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "MELEE_ATTACK_COUNTS": {
+    "name": "近战攻击目标数",
+    "icon": "",
+    "suffix": "个",
+    "color": 16724096,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "MELEE_ATTACK_COUNTS_PERCENT": {
+    "name": "近战攻击目标数",
+    "icon": "",
+    "suffix": "",
+    "color": 16724096,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "MELEE_ATTACK_RANGE": {
+    "name": "近战攻击范围",
+    "icon": "",
+    "suffix": "格",
+    "color": 16724096,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "MELEE_ATTACK_RANGE_PERCENT": {
+    "name": "近战攻击范围",
+    "icon": "",
+    "suffix": "",
+    "color": 16724096,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "ARROW_ATTACK": {
+    "name": "箭矢攻击",
+    "icon": "⚔ ",
+    "suffix": "",
+    "color": 15761504,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "ARROW_ATTACK_PERCENT": {
+    "name": "箭矢攻击",
+    "icon": "⚔ ",
+    "suffix": "",
+    "color": 15761504,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "MAGIC_DAMAGE": {
+    "name": "魔法攻击",
+    "icon": "⚔ ",
+    "suffix": "",
+    "color": 4253951,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "MAGIC_DAMAGE_PERCENT": {
+    "name": "魔法攻击",
+    "icon": "⚔ ",
+    "suffix": "",
+    "color": 4253951,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "ATTACK_SPEED": {
+    "name": "攻击速度",
+    "icon": "➹ ",
+    "suffix": " T/s",
+    "color": 16752736,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "CAST_SPEED": {
+    "name": "施法速度",
+    "icon": "➹ ",
+    "suffix": " T/s",
+    "color": 16752736,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "ARROW_SPEED": {
+    "name": "箭矢速度",
+    "icon": "➹ ",
+    "suffix": "",
+    "color": 16752736,
+    "percent": true,
+    "lowerIsBetter": false
+  },
+  "ARROW_LIFETIME": {
+    "name": "箭矢存活时间",
+    "icon": "➹ ",
+    "suffix": " tick",
+    "color": 16752736,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "TRACE_WIDTH_BONUS_RAW": {
+    "name": "追踪选区范围",
+    "icon": "➹ ",
+    "suffix": "",
+    "color": 16744608,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "TRACE_WIDTH_BONUS_PERCENT": {
+    "name": "追踪选区范围",
+    "icon": "➹ ",
+    "suffix": "",
+    "color": 16744608,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "ARROW_PIERCE": {
+    "name": "箭矢穿透",
+    "icon": "➹ ",
+    "suffix": " 个",
+    "color": 16752736,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "ARMOR": {
+    "name": "护甲",
+    "icon": "🔰 ",
+    "suffix": "",
+    "color": 5609949,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "MAGIC_DEFENSE": {
+    "name": "魔法抗性",
+    "icon": "🔰 ",
+    "suffix": "",
+    "color": 5290232,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "ARMOR_PENETRATE": {
+    "name": "护甲穿透",
+    "icon": "",
+    "suffix": "",
+    "color": 5609949,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "ARMOR_PENETRATION": {
+    "name": "护甲穿透",
+    "icon": "",
+    "suffix": "",
+    "color": 5609949,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "ARMOR_PENETRATION_PERCENT": {
+    "name": "护甲穿透",
+    "icon": "",
+    "suffix": "",
+    "color": 5609949,
+    "percent": true,
+    "lowerIsBetter": false
+  },
+  "MAGIC_PENETRATION": {
+    "name": "魔法穿透",
+    "icon": "",
+    "suffix": "",
+    "color": 5290232,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "MAGIC_PENETRATION_PERCENT": {
+    "name": "魔法穿透",
+    "icon": "",
+    "suffix": "",
+    "color": 5290232,
+    "percent": true,
+    "lowerIsBetter": false
+  },
+  "MOVE_SPEED": {
+    "name": "移动速度",
+    "icon": "",
+    "suffix": "",
+    "color": 16755200,
+    "percent": true,
+    "lowerIsBetter": false
+  },
+  "MANA_REGEN": {
+    "name": "法力恢复",
+    "icon": "✨ ",
+    "suffix": " P/s",
+    "color": 2162608,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "MAX_MANA": {
+    "name": "法力值",
+    "icon": "",
+    "suffix": "",
+    "color": 6356991,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "MANA_USE": {
+    "name": "法力消耗",
+    "icon": "⚶ ",
+    "suffix": " P/t",
+    "color": 13672544,
+    "percent": false,
+    "lowerIsBetter": true
+  },
+  "MAGIC_RANGE": {
+    "name": "法球伤害半径",
+    "icon": "",
+    "suffix": " 格",
+    "color": 7399664,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "MAGIC_FLY_SPEED": {
+    "name": "法球飞行速度",
+    "icon": "",
+    "suffix": " 格/ticks",
+    "color": 7399664,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "MAGIC_FLY_DISTANCE": {
+    "name": "法球飞行距离",
+    "icon": "",
+    "suffix": " 格",
+    "color": 7399664,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "FINAL_DAMAGE_MODIFY": {
+    "name": "全系伤害加成",
+    "icon": "",
+    "suffix": "",
+    "color": 15253312,
+    "percent": true,
+    "lowerIsBetter": false
+  },
+  "DOGE": {
+    "name": "闪避",
+    "icon": "",
+    "suffix": "",
+    "color": 14737536,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "KNOWING": {
+    "name": "会心",
+    "icon": "",
+    "suffix": "",
+    "color": 14737536,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "HIT": {
+    "name": "命中",
+    "icon": "",
+    "suffix": "",
+    "color": 14737536,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "FLEXIBLE": {
+    "name": "柔韧",
+    "icon": "",
+    "suffix": "",
+    "color": 14737536,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "CRIT_DAMAGE": {
+    "name": "暴击伤害",
+    "icon": "",
+    "suffix": "",
+    "color": 16777072,
+    "percent": true,
+    "lowerIsBetter": false
+  },
+  "DARK_INCREASE": {
+    "name": "暗属性强化",
+    "icon": "⚛ ",
+    "suffix": "",
+    "color": 10485920,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "DARK_DEFENSE": {
+    "name": "暗属性抗性",
+    "icon": "⚛ ",
+    "suffix": "",
+    "color": 10485920,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "LIGHT_INCREASE": {
+    "name": "光属性强化",
+    "icon": "🌟 ",
+    "suffix": "",
+    "color": 16776960,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "LIGHT_DEFENSE": {
+    "name": "光属性抗性",
+    "icon": "🌟 ",
+    "suffix": "",
+    "color": 16776960,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "FIRE_INCREASE": {
+    "name": "火属性强化",
+    "icon": "❃ ",
+    "suffix": "",
+    "color": 16736352,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "FIRE_DEFENSE": {
+    "name": "火属性抗性",
+    "icon": "❃ ",
+    "suffix": "",
+    "color": 16736352,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "ICE_INCREASE": {
+    "name": "冰属性强化",
+    "icon": "❄ ",
+    "suffix": "",
+    "color": 6356991,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "ICE_DEFENSE": {
+    "name": "冰属性抗性",
+    "icon": "❄ ",
+    "suffix": "",
+    "color": 6356991,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "EARTH_INCREASE": {
+    "name": "地属性强化",
+    "icon": "⛰ ",
+    "suffix": "",
+    "color": 32768,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "EARTH_DEFENSE": {
+    "name": "地属性抗性",
+    "icon": "⛰ ",
+    "suffix": "",
+    "color": 32768,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "LIGHTNING_INCREASE": {
+    "name": "雷属性强化",
+    "icon": "🌩 ",
+    "suffix": "",
+    "color": 8421631,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "LIGHTNING_DEFENSE": {
+    "name": "雷属性抗性",
+    "icon": "🌩 ",
+    "suffix": "",
+    "color": 8421631,
+    "percent": false,
+    "lowerIsBetter": false
+  },
+  "LOOT_INTERACT_BONUS": {
+    "name": "宝箱搜掠距离",
+    "icon": "✌ ",
+    "suffix": "",
+    "color": 16752848,
+    "percent": false,
+    "lowerIsBetter": false
+  }
+}
