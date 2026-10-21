@@ -3,7 +3,7 @@
   "id": "rapidsutils",
   "version": "${version}",
   "name": "RapidsUtils",
-  "description": "Client HUD and equipment comparison for Rapids. Updated 2026-10-22 07:30 +08:00.",
+  "description": "Client HUD, equipment comparison, and item slot tint for Rapids. Updated 2026-10-22 07:38 +08:00.",
   "authors": [
     "Atenls"
   ],

@@ -5,6 +5,7 @@ import com.atenls.rapidsutils.client.config.RapidsConfig;
 import com.atenls.rapidsutils.client.equipment.EquipmentAttributeDisplays;
 import com.atenls.rapidsutils.client.equipment.DpimEquipmentReader;
 import com.atenls.rapidsutils.client.render.PlayerVitalsHudRenderer;
+import com.atenls.rapidsutils.client.render.ItemSlotTintRenderer;
 import com.atenls.rapidsutils.client.render.RapidsHudRenderer;
 import com.atenls.rapidsutils.state.PlayerVitalsState;
 import com.atenls.rapidsutils.state.TopicSnapshotStore;
@@ -40,7 +41,11 @@ public final class RapidsUtilsClient implements ClientModInitializer {
     public void onInitializeClient() {
         RapidsConfig config = RapidsConfig.load();
         EquipmentAttributeDisplays.load();
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> DpimEquipmentReader.clear());
+        ItemSlotTintRenderer.load();
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            DpimEquipmentReader.clear();
+            ItemSlotTintRenderer.clear();
+        });
         AtomicLong clientTicks = new AtomicLong();
         TopicSnapshotStore store = new TopicSnapshotStore(
                 clientTicks::get,

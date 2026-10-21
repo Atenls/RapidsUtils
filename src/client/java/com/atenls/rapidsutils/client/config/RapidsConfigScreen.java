@@ -18,6 +18,7 @@ public final class RapidsConfigScreen extends Screen {
     private final RapidsConfig config;
     private boolean enabled;
     private boolean equipmentComparison;
+    private boolean itemSlotTint;
     private float backgroundOpacity;
     private int margin;
     private int maxWidth;
@@ -30,6 +31,7 @@ public final class RapidsConfigScreen extends Screen {
         this.config = RapidsConfig.get();
         this.enabled = config.enabled;
         this.equipmentComparison = config.equipmentComparison;
+        this.itemSlotTint = config.itemSlotTint;
         this.backgroundOpacity = config.backgroundOpacity;
         this.margin = config.margin;
         this.maxWidth = config.maxWidth;
@@ -45,13 +47,19 @@ public final class RapidsConfigScreen extends Screen {
                     enabled = !enabled;
                     button.setMessage(enabledMessage());
                 })
-                .dimensions(controlX, y, 136, CONTROL_HEIGHT)
+                .dimensions(controlX, y, 88, CONTROL_HEIGHT)
                 .build());
         addDrawableChild(ButtonWidget.builder(comparisonMessage(), button -> {
                     equipmentComparison = !equipmentComparison;
                     button.setMessage(comparisonMessage());
                 })
-                .dimensions(controlX + 144, y, 136, CONTROL_HEIGHT)
+                .dimensions(controlX + 96, y, 88, CONTROL_HEIGHT)
+                .build());
+        addDrawableChild(ButtonWidget.builder(slotTintMessage(), button -> {
+                    itemSlotTint = !itemSlotTint;
+                    button.setMessage(slotTintMessage());
+                })
+                .dimensions(controlX + 192, y, 88, CONTROL_HEIGHT)
                 .build());
         addDrawableChild(new ConfigSlider(controlX, y + 24, opacityMessage(), opacityToSlider(backgroundOpacity)) {
             @Override
@@ -158,6 +166,7 @@ public final class RapidsConfigScreen extends Screen {
     private void saveAndClose() {
         config.enabled = enabled;
         config.equipmentComparison = equipmentComparison;
+        config.itemSlotTint = itemSlotTint;
         config.backgroundOpacity = backgroundOpacity;
         config.margin = margin;
         config.maxWidth = maxWidth;
@@ -179,6 +188,10 @@ public final class RapidsConfigScreen extends Screen {
 
     private Text comparisonMessage() {
         return Text.literal("装备比对：" + (equipmentComparison ? "开启" : "关闭"));
+    }
+
+    private Text slotTintMessage() {
+        return Text.literal("物品染色：" + (itemSlotTint ? "开启" : "关闭"));
     }
 
     private Text opacityMessage() {

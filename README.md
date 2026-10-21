@@ -153,6 +153,29 @@ Attribute names, icons, units, colors (the first color for a gradient), percenta
 
 The server must preserve the DPIM PDC in the item data it sends to the client. Malformed managed items are skipped rather than compared using partial attribute totals.
 
+## Item slot tint
+
+Inventory and container slots show a darkened, soft-edged circle behind equipment and materials. Only items with a valid JSON object in `minecraft:custom_data.PublicBukkitValues["dpitemmanager:tags"]` are eligible, including an empty `{}`. Items without tags, empty slots, and malformed tags are skipped, even if their names are colored. The in-world hotbar and dragged cursor stack are not tinted.
+
+The color first resolves `tags.quality-name*`, then `tags.quality-name`, against the bundled snapshot of DPItemManager's `quality-display.yml` **quality-color** values. Unknown or missing qualities fall back to the first explicit color in the item name, supporting styled Minecraft text, `&#RRGGBB`, `§x§R§R§G§G§B§B`, and legacy `&` / `§` colors. For example, `&#EE77EE▌ &#CC80CC强化保护石` uses `#EE77EE`. Eligible items without a name color remain untinted.
+
+The circle has a 12 GUI-pixel diameter, a darkened center at 50% opacity, and a fading edge. The feature has an independent **物品染色** toggle in Mod Menu. In `config/rapidsutils.json`, `itemSlotTint` defaults to `true`, and `itemSlotTintOpacity` defaults to `0.5` (range `0`–`1`). Missing fields in older configurations use these defaults. These settings do not depend on the HUD or equipment-comparison toggles.
+
+Server palette changes are not automatically synchronized. Override specific qualities in `config/rapidsutils-quality-colors.json` and restart the client; omitted qualities retain their bundled colors:
+
+```json
+{
+  "史诗": "#CC80CC",
+  "传奇": "#FFAA00"
+}
+```
+
+The tint uses one textured quad per eligible slot, with bounded caches for tag parsing and name colors. `tools/GenerateSlotTintTexture.java` regenerates the grayscale mask using only Java 21:
+
+```powershell
+& "$env:JAVA_HOME/bin/java.exe" tools/GenerateSlotTintTexture.java src/main/resources/assets/rapidsutils/textures/gui/item_slot_tint.png
+```
+
 ## Build
 
 On Windows:

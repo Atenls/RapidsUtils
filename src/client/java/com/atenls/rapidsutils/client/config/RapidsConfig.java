@@ -32,6 +32,8 @@ public final class RapidsConfig {
 
     public boolean enabled = true;
     public boolean equipmentComparison = true;
+    public boolean itemSlotTint = true;
+    public float itemSlotTintOpacity = 0.5F;
     public int margin = 5;
     public float backgroundOpacity = 0.6F;
     public int maxWidth = 300;
@@ -105,6 +107,8 @@ public final class RapidsConfig {
     }
 
     private void sanitize() {
+        itemSlotTintOpacity = Float.isFinite(itemSlotTintOpacity)
+                ? Math.max(0F, Math.min(1F, itemSlotTintOpacity)) : 0.5F;
         margin = Math.max(0, Math.min(64, margin));
         backgroundOpacity = Math.max(0.15F, Math.min(0.95F, backgroundOpacity));
         maxWidth = Math.max(140, Math.min(600, maxWidth));

@@ -1,6 +1,7 @@
 package com.atenls.rapidsutils.client.mixin;
 
 import com.atenls.rapidsutils.client.equipment.EquipmentComparisonTooltip;
+import com.atenls.rapidsutils.client.render.ItemSlotTintRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.screen.slot.Slot;
@@ -15,6 +16,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class HandledScreenMixin {
     @Shadow protected Slot focusedSlot;
     @Unique private Runnable rapidsutils$previousDrawer;
+
+    @Inject(method = "drawSlot", at = @At("HEAD"))
+    private void rapidsutils$tintSlot(DrawContext context, Slot slot, int mouseX, int mouseY, CallbackInfo ci) {
+        ItemSlotTintRenderer.draw(context, slot);
+    }
 
     @Inject(method = "drawMouseoverTooltip", at = @At("HEAD"))
     private void rapidsutils$rememberDrawer(DrawContext context, int x, int y, CallbackInfo ci) {
