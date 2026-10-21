@@ -60,19 +60,22 @@ public final class EquipmentComparisonTooltip {
             return;
         }
         List<Text> comparison = new ArrayList<>();
-        comparison.add(Text.translatable("tooltip.rapidsutils.compare.title").formatted(Formatting.GOLD));
         comparison.add(Text.translatable("tooltip.rapidsutils.compare.slot." + slot.getName()).formatted(Formatting.GRAY));
-        comparison.add(equipped.isEmpty() ? Text.translatable("tooltip.rapidsutils.compare.empty").formatted(Formatting.GRAY)
-                : Text.translatable("tooltip.rapidsutils.compare.equipped", equipped.getName()));
+        comparison.add(Text.literal(" - ").formatted(Formatting.DARK_GRAY).append((equipped.isEmpty()
+                ? Text.translatable("tooltip.rapidsutils.compare.empty")
+                : Text.translatable("tooltip.rapidsutils.compare.equipped", equipped.getName())).formatted(Formatting.GRAY)));
         if (!equipped.isEmpty() && old.isEmpty()) {
             comparison.add(Text.translatable("tooltip.rapidsutils.compare.no_attributes").formatted(Formatting.DARK_GRAY));
         }
         comparison.add(Text.empty());
-        for (var row : rows) {
+        for (int index = 0; index < rows.size(); index++) {
+            var row = rows.get(index);
             var display = EquipmentAttributeDisplays.get(row.key().name(), row.displayName());
             boolean percent = row.key().percent() || display.percent() || row.key().name().endsWith("_PERCENT");
             String unit = percent ? "%" : "";
-            var line = Text.literal(display.icon() + display.name()).withColor(display.color());
+            String branch = rows.size() == 1 ? "-" : index == 0 ? "┌" : index == rows.size() - 1 ? "└" : "├";
+            var line = Text.literal("  " + branch + " ").formatted(Formatting.DARK_GRAY);
+            line.append(Text.literal(display.icon() + display.name()).withColor(display.color()));
             line.append(Text.literal(" " + range(row.before().min(), row.before().max()) + unit + " → "
                     + range(row.after().min(), row.after().max()) + unit).formatted(Formatting.WHITE));
             if (!display.suffix().isBlank()) {
@@ -86,7 +89,6 @@ public final class EquipmentComparisonTooltip {
             comparison.add(line);
         }
         comparison.add(Text.empty());
-        comparison.add(Text.translatable("tooltip.rapidsutils.compare.no_sets").formatted(Formatting.DARK_GRAY));
         List<TooltipComponent> side = components(comparison);
         // Keep the exact drawer installed by vanilla and other mods, including its components and positioner.
         ((DrawContextAccessor) context).rapidsutils$setTooltipDrawer(() -> {

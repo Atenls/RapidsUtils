@@ -1,15 +1,13 @@
 {
   "key.category.rapidsutils.general": "RapidsUtils",
   "key.rapidsutils.toggle_hud": "Toggle HUD",
-  "tooltip.rapidsutils.compare.title": "Equipment comparison",
   "tooltip.rapidsutils.compare.slot.mainhand": "Compared with main hand",
   "tooltip.rapidsutils.compare.slot.offhand": "Compared with off hand",
   "tooltip.rapidsutils.compare.slot.head": "Compared with head slot",
   "tooltip.rapidsutils.compare.slot.chest": "Compared with chest slot",
   "tooltip.rapidsutils.compare.slot.legs": "Compared with leg slot",
   "tooltip.rapidsutils.compare.slot.feet": "Compared with foot slot",
-  "tooltip.rapidsutils.compare.equipped": "Equipped: %s",
+  "tooltip.rapidsutils.compare.equipped": "Current equipment: %s",
   "tooltip.rapidsutils.compare.empty": "Nothing equipped in this slot",
-  "tooltip.rapidsutils.compare.no_attributes": "Equipped item has no DPIM attributes; using zero",
-  "tooltip.rapidsutils.compare.no_sets": "Equipped → Hovered · Excludes set bonuses"
+  "tooltip.rapidsutils.compare.no_attributes": "Equipped item has no DPIM attributes; using zero"
 }

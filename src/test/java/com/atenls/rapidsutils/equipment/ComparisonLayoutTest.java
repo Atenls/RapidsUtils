@@ -10,7 +10,7 @@ class ComparisonLayoutTest {
         var right = ComparisonLayout.place(1000, 600, 200, 100, 150, 200, 200, 250);
         assertEquals(200, right.x());
         assertEquals(0, right.primaryX());
-        assertEquals(166, right.comparisonX());
+        assertEquals(158, right.comparisonX());
         assertEquals(1F, right.scale());
         var left = ComparisonLayout.place(1000, 600, 800, 100, 150, 200, 200, 250);
         assertEquals(800, left.x() + left.primaryX());

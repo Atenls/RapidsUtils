@@ -1,15 +1,13 @@
 {
   "key.category.rapidsutils.general": "RapidsUtils",
   "key.rapidsutils.toggle_hud": "切换 HUD 显示",
-  "tooltip.rapidsutils.compare.title": "装备属性比对",
   "tooltip.rapidsutils.compare.slot.mainhand": "与主手装备比对",
   "tooltip.rapidsutils.compare.slot.offhand": "与副手装备比对",
   "tooltip.rapidsutils.compare.slot.head": "与头部装备比对",
   "tooltip.rapidsutils.compare.slot.chest": "与胸部装备比对",
   "tooltip.rapidsutils.compare.slot.legs": "与腿部装备比对",
   "tooltip.rapidsutils.compare.slot.feet": "与脚部装备比对",
-  "tooltip.rapidsutils.compare.equipped": "已装备：%s",
+  "tooltip.rapidsutils.compare.equipped": "当前装备: %s",
   "tooltip.rapidsutils.compare.empty": "当前部位未装备",
-  "tooltip.rapidsutils.compare.no_attributes": "当前装备未记录 DPIM 属性，按 0 比对",
-  "tooltip.rapidsutils.compare.no_sets": "已装备 → 悬停装备 · 不含套装加成"
+  "tooltip.rapidsutils.compare.no_attributes": "当前装备未记录 DPIM 属性，按 0 比对"
 }
