@@ -21,12 +21,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 
 public final class ItemSlotTintRenderer {
     private static final Identifier TEXTURE = Identifier.of("rapidsutils", "textures/gui/item_slot_tint.png");
+    private static final Identifier CENTER_TEXTURE = Identifier.of("rapidsutils", "textures/gui/item_slot_tint_center.png");
     private static final Map<NbtComponent, SlotTintColors.Resolution> TAG_CACHE = cache();
     private static final Map<Text, OptionalInt> NAME_CACHE = cache();
     private static SlotTintColors colors = SlotTintColors.empty();
@@ -52,19 +54,38 @@ public final class ItemSlotTintRenderer {
         }
     }
 
-    public static void draw(DrawContext context, Slot slot) {
+    public static void drawSlots(DrawContext context, List<Slot> slots) {
         RapidsConfig config = RapidsConfig.get();
-        if (!config.itemSlotTint || config.itemSlotTintOpacity <= 0 || !slot.hasStack()) {
+        if (!config.itemSlotTint || config.itemSlotTintOpacity <= 0) {
             return;
         }
+        boolean drawn = false;
+        for (Slot slot : slots) {
+            if (slot.isEnabled() && slot.hasStack()) {
+                drawn |= draw(context, slot, config);
+            }
+        }
+        if (drawn) {
+            // Enlarged circles overlap neighboring slots; keep every item above every tint.
+            context.createNewRootLayer();
+        }
+    }
+
+    private static boolean draw(DrawContext context, Slot slot, RapidsConfig config) {
         OptionalInt color = color(slot.getStack());
         if (color.isEmpty()) {
-            return;
+            return false;
         }
         int argb = (Math.round(config.itemSlotTintOpacity * 255) << 24) | color.getAsInt();
-        // One textured quad per slot; the mask provides the darkening and soft circular edge.
-        context.drawTexture(RenderPipelines.GUI_TEXTURED, TEXTURE, slot.x + 2, slot.y + 2,
-                0F, 0F, 12, 12, 32, 32, 32, 32, argb);
+        // Center a 24-pixel circle on the 16-pixel item. The base controls edge opacity;
+        // the radial overlay increases opacity to 100% at the center using source-over blending.
+        context.drawTexture(RenderPipelines.GUI_TEXTURED, TEXTURE, slot.x - 4, slot.y - 4,
+                0F, 0F, 24, 24, 32, 32, 32, 32, argb);
+        if (config.itemSlotTintOpacity < 1F) {
+            context.drawTexture(RenderPipelines.GUI_TEXTURED, CENTER_TEXTURE, slot.x - 4, slot.y - 4,
+                    0F, 0F, 24, 24, 32, 32, 32, 32, 0xFF000000 | color.getAsInt());
+        }
+        return true;
     }
 
     private static OptionalInt color(ItemStack stack) {

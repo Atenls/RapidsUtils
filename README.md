@@ -159,7 +159,7 @@ Inventory and container slots show a darkened, soft-edged circle behind equipmen
 
 The color first resolves `tags.quality-name*`, then `tags.quality-name`, against the bundled snapshot of DPItemManager's `quality-display.yml` **quality-color** values. Unknown or missing qualities fall back to the first explicit color in the item name, supporting styled Minecraft text, `&#RRGGBB`, `§x§R§R§G§G§B§B`, and legacy `&` / `§` colors. For example, `&#EE77EE▌ &#CC80CC强化保护石` uses `#EE77EE`. Eligible items without a name color remain untinted.
 
-The circle has a 12 GUI-pixel diameter, a darkened center at 50% opacity, and a fading edge. The feature has an independent **物品染色** toggle in Mod Menu. In `config/rapidsutils.json`, `itemSlotTint` defaults to `true`, and `itemSlotTintOpacity` defaults to `0.5` (range `0`–`1`). Missing fields in older configurations use these defaults. These settings do not depend on the HUD or equipment-comparison toggles.
+The darkened circle has a 24 GUI-pixel diameter, centered behind the 16-pixel item, with 0% transparency at the center and a smooth radial transition to 50% transparency at the edge. It extends four pixels past each side of the item. The feature has an independent **物品染色** toggle in Mod Menu. In `config/rapidsutils.json`, `itemSlotTint` defaults to `true`, and `itemSlotTintOpacity` controls the **outer-edge opacity**, defaulting to `0.5` (range `0`–`1`; zero disables the tint). The center remains fully opaque. Existing `0.5` configurations automatically get the stronger gradient. Missing fields in older configurations use these defaults. These settings do not depend on the HUD or equipment-comparison toggles.
 
 Server palette changes are not automatically synchronized. Override specific qualities in `config/rapidsutils-quality-colors.json` and restart the client; omitted qualities retain their bundled colors:
 
@@ -170,7 +170,7 @@ Server palette changes are not automatically synchronized. Override specific qua
 }
 ```
 
-The tint uses one textured quad per eligible slot, with bounded caches for tag parsing and name colors. `tools/GenerateSlotTintTexture.java` regenerates the grayscale mask using only Java 21:
+All slot tints are drawn before any slot items so enlarged circles cannot cover neighboring icons. Each tint uses a circular base and radial center overlay (two textured quads per eligible slot), with bounded caches for tag parsing and name colors. `tools/GenerateSlotTintTexture.java` regenerates both grayscale masks using only Java 21:
 
 ```powershell
 & "$env:JAVA_HOME/bin/java.exe" tools/GenerateSlotTintTexture.java src/main/resources/assets/rapidsutils/textures/gui/item_slot_tint.png

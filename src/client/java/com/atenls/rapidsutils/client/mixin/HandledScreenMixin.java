@@ -17,9 +17,9 @@ public abstract class HandledScreenMixin {
     @Shadow protected Slot focusedSlot;
     @Unique private Runnable rapidsutils$previousDrawer;
 
-    @Inject(method = "drawSlot", at = @At("HEAD"))
-    private void rapidsutils$tintSlot(DrawContext context, Slot slot, int mouseX, int mouseY, CallbackInfo ci) {
-        ItemSlotTintRenderer.draw(context, slot);
+    @Inject(method = "drawSlots", at = @At("HEAD"))
+    private void rapidsutils$tintSlots(DrawContext context, int mouseX, int mouseY, CallbackInfo ci) {
+        ItemSlotTintRenderer.drawSlots(context, ((HandledScreen<?>) (Object) this).getScreenHandler().slots);
     }
 
     @Inject(method = "drawMouseoverTooltip", at = @At("HEAD"))

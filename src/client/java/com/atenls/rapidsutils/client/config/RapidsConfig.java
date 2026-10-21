@@ -33,6 +33,7 @@ public final class RapidsConfig {
     public boolean enabled = true;
     public boolean equipmentComparison = true;
     public boolean itemSlotTint = true;
+    // Outer-edge opacity; a radial overlay makes the center fully opaque. Zero disables the tint.
     public float itemSlotTintOpacity = 0.5F;
     public int margin = 5;
     public float backgroundOpacity = 0.6F;
