@@ -8,14 +8,13 @@ import com.atenls.rapidsutils.equipment.EquipmentSnapshot;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.tooltip.HoveredTooltipPositioner;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
+import net.minecraft.client.gui.tooltip.TooltipPositioner;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.EquippableComponent;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.item.tooltip.TooltipData;
 import net.minecraft.registry.tag.ItemTags;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
@@ -29,15 +28,14 @@ import java.util.List;
 import java.util.Optional;
 
 public final class EquipmentComparisonTooltip {
+    private static final ThreadLocal<Pending> PENDING = new ThreadLocal<>();
+
     private EquipmentComparisonTooltip() { }
 
-    public static void draw(DrawContext context, TextRenderer font, List<Text> primary,
-                            Optional<TooltipData> data, int mouseX, int mouseY, Identifier style, Slot hovered) {
-        // Preserve vanilla's deferred tooltip behavior, including when no comparison is available.
-        boolean alreadyQueued = ((DrawContextAccessor) context).rapidsutils$getTooltipDrawer() != null;
-        context.drawTooltip(font, primary, data, mouseX, mouseY, style);
+    public static void append(DrawContext context, Slot hovered) {
+        Runnable original = ((DrawContextAccessor) context).rapidsutils$getTooltipDrawer();
         MinecraftClient client = MinecraftClient.getInstance();
-        if (alreadyQueued || (primary.isEmpty() && data.isEmpty()) || !RapidsConfig.get().equipmentComparison
+        if (original == null || !RapidsConfig.get().equipmentComparison
                 || client.player == null || hovered == null
                 || hovered.inventory != client.player.getInventory()) {
             return;
@@ -89,30 +87,48 @@ public final class EquipmentComparisonTooltip {
         }
         comparison.add(Text.empty());
         comparison.add(Text.translatable("tooltip.rapidsutils.compare.no_sets").formatted(Formatting.DARK_GRAY));
-        List<TooltipComponent> main = components(primary);
-        data.ifPresent(value -> main.add(main.isEmpty() ? 0 : 1, TooltipComponent.of(value)));
         List<TooltipComponent> side = components(comparison);
-        // DrawContext holds one deferred drawer. Queue both panels together so neither replaces the other.
+        // Keep the exact drawer installed by vanilla and other mods, including its components and positioner.
         ((DrawContextAccessor) context).rapidsutils$setTooltipDrawer(() -> {
-            int mainWidth = width(main, font);
-            int mainHeight = height(main, font);
-            var anchor = HoveredTooltipPositioner.INSTANCE.getPosition(context.getScaledWindowWidth(),
-                    context.getScaledWindowHeight(), mouseX, mouseY, mainWidth, mainHeight);
-            var layout = ComparisonLayout.place(context.getScaledWindowWidth(), context.getScaledWindowHeight(),
-                    anchor.x(), anchor.y(), mainWidth, mainHeight, width(side, font), height(side, font));
-            context.getMatrices().pushMatrix();
+            PENDING.set(new Pending(context, side));
             try {
-                context.getMatrices().translate(layout.x(), layout.y());
-                context.getMatrices().scale(layout.scale());
-                context.drawTooltipImmediately(font, main, mouseX, mouseY,
-                        (sw, sh, mx, my, w, h) -> new Vector2i(layout.primaryX(), 0), style);
-                context.drawTooltipImmediately(font, side, mouseX, mouseY,
-                        (sw, sh, mx, my, w, h) -> new Vector2i(layout.comparisonX(), 0), null);
+                original.run();
             } finally {
-                context.getMatrices().popMatrix();
+                PENDING.remove();
             }
         });
     }
+
+    public static boolean renderPending(DrawContext context, TextRenderer font, List<TooltipComponent> main,
+                                         int mouseX, int mouseY, TooltipPositioner positioner, Identifier style) {
+        Pending pending = PENDING.get();
+        if (pending == null || pending.context() != context || main.isEmpty()) {
+            return false;
+        }
+        // Consume before calling native drawing again, preventing recursive interception.
+        PENDING.remove();
+        List<TooltipComponent> side = pending.side();
+        int mainWidth = width(main, font);
+        int mainHeight = height(main, font);
+        var anchor = positioner.getPosition(context.getScaledWindowWidth(), context.getScaledWindowHeight(),
+                mouseX, mouseY, mainWidth, mainHeight);
+        var layout = ComparisonLayout.place(context.getScaledWindowWidth(), context.getScaledWindowHeight(),
+                anchor.x(), anchor.y(), mainWidth, mainHeight, width(side, font), height(side, font));
+        context.getMatrices().pushMatrix();
+        try {
+            context.getMatrices().translate(layout.x(), layout.y());
+            context.getMatrices().scale(layout.scale());
+            context.drawTooltipImmediately(font, main, mouseX, mouseY,
+                    (sw, sh, mx, my, w, h) -> new Vector2i(layout.primaryX(), 0), style);
+            context.drawTooltipImmediately(font, side, mouseX, mouseY,
+                    (sw, sh, mx, my, w, h) -> new Vector2i(layout.comparisonX(), 0), null);
+        } finally {
+            context.getMatrices().popMatrix();
+        }
+        return true;
+    }
+
+    private record Pending(DrawContext context, List<TooltipComponent> side) { }
 
     private static EquipmentSlot slot(ItemStack stack) {
         EquippableComponent equippable = stack.get(DataComponentTypes.EQUIPPABLE);
