@@ -2,7 +2,7 @@ package com.atenls.rapidsutils.equipment;
 
 /** Coordinates for two native tooltips, including room for their backgrounds. */
 public record ComparisonLayout(int x, int y, float scale, int primaryX, int comparisonX) {
-    public static final int GAP = 8;
+    public static final int GAP = 12;
     private static final int MARGIN = 12;
 
     public static ComparisonLayout place(int screenWidth, int screenHeight, int preferredX, int preferredY,

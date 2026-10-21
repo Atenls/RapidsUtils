@@ -8,6 +8,7 @@ import com.atenls.rapidsutils.equipment.EquipmentSnapshot;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.tooltip.TooltipBackgroundRenderer;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.gui.tooltip.TooltipPositioner;
 import net.minecraft.component.DataComponentTypes;
@@ -20,7 +21,6 @@ import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
-import org.joml.Vector2i;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -112,22 +112,44 @@ public final class EquipmentComparisonTooltip {
         List<TooltipComponent> side = pending.side();
         int mainWidth = width(main, font);
         int mainHeight = height(main, font);
+        int sideWidth = width(side, font);
+        int sideHeight = height(side, font);
         var anchor = positioner.getPosition(context.getScaledWindowWidth(), context.getScaledWindowHeight(),
                 mouseX, mouseY, mainWidth, mainHeight);
         var layout = ComparisonLayout.place(context.getScaledWindowWidth(), context.getScaledWindowHeight(),
-                anchor.x(), anchor.y(), mainWidth, mainHeight, width(side, font), height(side, font));
+                anchor.x(), anchor.y(), mainWidth, mainHeight, sideWidth, sideHeight);
         context.getMatrices().pushMatrix();
         try {
             context.getMatrices().translate(layout.x(), layout.y());
             context.getMatrices().scale(layout.scale());
-            context.drawTooltipImmediately(font, main, mouseX, mouseY,
-                    (sw, sh, mx, my, w, h) -> new Vector2i(layout.primaryX(), 0), style);
-            context.drawTooltipImmediately(font, side, mouseX, mouseY,
-                    (sw, sh, mx, my, w, h) -> new Vector2i(layout.comparisonX(), 0), null);
+            // Native backgrounds extend 12 pixels past the text bounds. Draw both before any
+            // foreground so a neighboring background cannot darken already rendered glyphs.
+            TooltipBackgroundRenderer.render(context, layout.primaryX(), 0, mainWidth, mainHeight, style);
+            TooltipBackgroundRenderer.render(context, layout.comparisonX(), 0, sideWidth, sideHeight, null);
+            context.createNewRootLayer();
+            drawContents(context, font, main, layout.primaryX(), mainWidth, mainHeight);
+            drawContents(context, font, side, layout.comparisonX(), sideWidth, sideHeight);
         } finally {
             context.getMatrices().popMatrix();
         }
         return true;
+    }
+
+    private static void drawContents(DrawContext context, TextRenderer font, List<TooltipComponent> lines,
+                                     int x, int width, int height) {
+        // Match vanilla's text pass, item pass, and two-pixel spacing after the first component.
+        int y = 0;
+        for (int index = 0; index < lines.size(); index++) {
+            TooltipComponent line = lines.get(index);
+            line.drawText(context, font, x, y);
+            y += line.getHeight(font) + (index == 0 ? 2 : 0);
+        }
+        y = 0;
+        for (int index = 0; index < lines.size(); index++) {
+            TooltipComponent line = lines.get(index);
+            line.drawItems(font, x, y, width, height, context);
+            y += line.getHeight(font) + (index == 0 ? 2 : 0);
+        }
     }
 
     private record Pending(DrawContext context, List<TooltipComponent> side) { }
