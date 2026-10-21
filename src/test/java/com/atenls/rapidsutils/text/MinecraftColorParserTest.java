@@ -5,8 +5,18 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MinecraftColorParserTest {
+    @Test
+    void findsFirstExplicitColorInsteadOfLaterNameColor() {
+        assertEquals(0xEE77EE, MinecraftColorParser.firstColor("&#EE77EE▌ &#CC80CC强化保护石").orElseThrow());
+        assertEquals(0x12ABF0, MinecraftColorParser.firstColor("§l§r§x§1§2§A§b§F§0物品 §c红").orElseThrow());
+        assertEquals(0x55FF55, MinecraftColorParser.firstColor("无色前缀 &l&a绿色 &#FF0000红色").orElseThrow());
+        assertTrue(MinecraftColorParser.firstColor("无色物品 §l粗体 &r重置 &#GGHHII").isEmpty());
+        assertTrue(MinecraftColorParser.firstColor(null).isEmpty());
+    }
+
     @Test
     void parsesLegacyHexAndResetColors() {
         List<MinecraftColorParser.Segment> segments = MinecraftColorParser.parse(

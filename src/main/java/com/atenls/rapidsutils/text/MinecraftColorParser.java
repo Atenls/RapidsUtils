@@ -2,6 +2,7 @@ package com.atenls.rapidsutils.text;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalInt;
 
 public final class MinecraftColorParser {
     private static final int[] LEGACY_COLORS = {
@@ -12,6 +13,33 @@ public final class MinecraftColorParser {
     };
 
     private MinecraftColorParser() {
+    }
+
+    /** First explicit color code, ignoring formatting and reset codes. */
+    public static OptionalInt firstColor(String input) {
+        if (input == null) {
+            return OptionalInt.empty();
+        }
+        for (int index = 0; index < input.length(); index++) {
+            int rgb = readAmpersandHexColor(input, index);
+            if (rgb >= 0) {
+                return OptionalInt.of(rgb);
+            }
+            char prefix = input.charAt(index);
+            if ((prefix == '&' || prefix == '§') && index + 1 < input.length()) {
+                if (prefix == '§') {
+                    rgb = readHexColor(input, index);
+                    if (rgb >= 0) {
+                        return OptionalInt.of(rgb);
+                    }
+                }
+                int legacy = Character.digit(input.charAt(index + 1), 16);
+                if (legacy >= 0) {
+                    return OptionalInt.of(LEGACY_COLORS[legacy]);
+                }
+            }
+        }
+        return OptionalInt.empty();
     }
 
     public static List<Segment> parse(String input, int defaultColor) {
