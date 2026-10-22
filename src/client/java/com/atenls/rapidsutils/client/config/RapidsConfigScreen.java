@@ -19,6 +19,7 @@ public final class RapidsConfigScreen extends Screen {
     private boolean enabled;
     private boolean equipmentComparison;
     private boolean itemSlotTint;
+    private float itemSlotTintOpacity;
     private float backgroundOpacity;
     private int margin;
     private int maxWidth;
@@ -32,6 +33,7 @@ public final class RapidsConfigScreen extends Screen {
         this.enabled = config.enabled;
         this.equipmentComparison = config.equipmentComparison;
         this.itemSlotTint = config.itemSlotTint;
+        this.itemSlotTintOpacity = config.itemSlotTintOpacity;
         this.backgroundOpacity = config.backgroundOpacity;
         this.margin = config.margin;
         this.maxWidth = config.maxWidth;
@@ -61,7 +63,7 @@ public final class RapidsConfigScreen extends Screen {
                 })
                 .dimensions(controlX + 192, y, 88, CONTROL_HEIGHT)
                 .build());
-        addDrawableChild(new ConfigSlider(controlX, y + 24, opacityMessage(), opacityToSlider(backgroundOpacity)) {
+        addDrawableChild(new ConfigSlider(controlX, y + 24, 136, opacityMessage(), opacityToSlider(backgroundOpacity)) {
             @Override
             protected void updateValue(double value) {
                 backgroundOpacity = sliderToOpacity(value);
@@ -70,6 +72,17 @@ public final class RapidsConfigScreen extends Screen {
             @Override
             protected Text message() {
                 return opacityMessage();
+            }
+        });
+        addDrawableChild(new ConfigSlider(controlX + 144, y + 24, 136, slotTintOpacityMessage(), itemSlotTintOpacity) {
+            @Override
+            protected void updateValue(double value) {
+                itemSlotTintOpacity = Math.round(value * 100.0D) / 100.0F;
+            }
+
+            @Override
+            protected Text message() {
+                return slotTintOpacityMessage();
             }
         });
         addDrawableChild(new ConfigSlider(controlX, y + 48, marginMessage(), margin / 64.0D) {
@@ -167,6 +180,7 @@ public final class RapidsConfigScreen extends Screen {
         config.enabled = enabled;
         config.equipmentComparison = equipmentComparison;
         config.itemSlotTint = itemSlotTint;
+        config.itemSlotTintOpacity = itemSlotTintOpacity;
         config.backgroundOpacity = backgroundOpacity;
         config.margin = margin;
         config.maxWidth = maxWidth;
@@ -196,6 +210,10 @@ public final class RapidsConfigScreen extends Screen {
 
     private Text opacityMessage() {
         return Text.literal("背景不透明度：" + Math.round(backgroundOpacity * 100.0F) + "%");
+    }
+
+    private Text slotTintOpacityMessage() {
+        return Text.literal("染色外缘不透明度：" + Math.round(itemSlotTintOpacity * 100.0F) + "%");
     }
 
     private Text marginMessage() {
@@ -228,7 +246,11 @@ public final class RapidsConfigScreen extends Screen {
 
     private abstract static class ConfigSlider extends SliderWidget {
         ConfigSlider(int x, int y, Text message, double value) {
-            super(x, y, CONTROL_WIDTH, CONTROL_HEIGHT, message, value);
+            this(x, y, CONTROL_WIDTH, message, value);
+        }
+
+        ConfigSlider(int x, int y, int width, Text message, double value) {
+            super(x, y, width, CONTROL_HEIGHT, message, value);
         }
 
         @Override

@@ -77,13 +77,13 @@ public final class ItemSlotTintRenderer {
             return false;
         }
         int argb = (Math.round(config.itemSlotTintOpacity * 255) << 24) | color.getAsInt();
-        // Center a 14-pixel circle on the 16-pixel item. The base controls edge opacity;
+        // Center a 16-pixel circle on the 16-pixel item. The base controls edge opacity;
         // the radial overlay increases opacity to 100% at the center using source-over blending.
-        context.drawTexture(RenderPipelines.GUI_TEXTURED, TEXTURE, slot.x + 1, slot.y + 1,
-                0F, 0F, 14, 14, 32, 32, 32, 32, argb);
+        context.drawTexture(RenderPipelines.GUI_TEXTURED, TEXTURE, slot.x, slot.y,
+                0F, 0F, 16, 16, 32, 32, 32, 32, argb);
         if (config.itemSlotTintOpacity < 1F) {
-            context.drawTexture(RenderPipelines.GUI_TEXTURED, CENTER_TEXTURE, slot.x + 1, slot.y + 1,
-                    0F, 0F, 14, 14, 32, 32, 32, 32, 0xFF000000 | color.getAsInt());
+            context.drawTexture(RenderPipelines.GUI_TEXTURED, CENTER_TEXTURE, slot.x, slot.y,
+                    0F, 0F, 16, 16, 32, 32, 32, 32, 0xFF000000 | color.getAsInt());
         }
         return true;
     }
