@@ -234,8 +234,8 @@ public final class EquipmentComparisonTooltip {
             MinecraftClient client = MinecraftClient.getInstance();
             if (!rendered || slot == null || slot != hovered || !RapidsConfig.get().equipmentComparison
                     || !ItemStack.areEqual(candidate, slot.getStack())
-                    || !(InputUtil.isKeyPressed(client.getWindow(), InputUtil.GLFW_KEY_LEFT_SHIFT)
-                    || InputUtil.isKeyPressed(client.getWindow(), InputUtil.GLFW_KEY_RIGHT_SHIFT))) {
+                    || !(InputUtil.isKeyPressed(client.getWindow(), InputUtil.GLFW_KEY_LEFT_ALT)
+                    || InputUtil.isKeyPressed(client.getWindow(), InputUtil.GLFW_KEY_RIGHT_ALT))) {
                 return false;
             }
             return travel.scroll(vertical);

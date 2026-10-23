@@ -1,6 +1,7 @@
 package com.atenls.rapidsutils.client.mixin;
 
 import com.atenls.rapidsutils.client.equipment.EquipmentComparisonTooltip;
+import com.atenls.rapidsutils.client.equipment.TooltipScrollHandler;
 import com.atenls.rapidsutils.client.render.ItemSlotTintRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
@@ -11,10 +12,9 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(HandledScreen.class)
-public abstract class HandledScreenMixin {
+public abstract class HandledScreenMixin implements TooltipScrollHandler {
     @Shadow protected Slot focusedSlot;
     @Unique private Runnable rapidsutils$previousDrawer;
     @Unique private final EquipmentComparisonTooltip.ScrollState rapidsutils$scroll = new EquipmentComparisonTooltip.ScrollState();
@@ -24,12 +24,9 @@ public abstract class HandledScreenMixin {
         throw new AssertionError();
     }
 
-    @Inject(method = "mouseScrolled", at = @At("HEAD"), cancellable = true)
-    private void rapidsutils$scrollTooltip(double mouseX, double mouseY, double horizontal, double vertical,
-                                          CallbackInfoReturnable<Boolean> cir) {
-        if (rapidsutils$scroll.scroll(getSlotAt(mouseX, mouseY), vertical)) {
-            cir.setReturnValue(true);
-        }
+    @Override
+    public boolean rapidsutils$scrollTooltip(double mouseX, double mouseY, double vertical) {
+        return rapidsutils$scroll.scroll(getSlotAt(mouseX, mouseY), vertical);
     }
 
     @Inject(method = "removed", at = @At("HEAD"))

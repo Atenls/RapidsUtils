@@ -2,6 +2,6 @@
   "required": true,
   "package": "com.atenls.rapidsutils.client.mixin",
   "compatibilityLevel": "JAVA_21",
-  "client": ["DrawContextAccessor", "DrawContextMixin", "HandledScreenMixin"],
+  "client": ["DrawContextAccessor", "DrawContextMixin", "HandledScreenMixin", "MouseMixin"],
   "injectors": { "defaultRequire": 1 }
 }
