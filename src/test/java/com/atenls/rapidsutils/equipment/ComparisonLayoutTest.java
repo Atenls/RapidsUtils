@@ -19,15 +19,26 @@ class ComparisonLayoutTest {
     }
 
     @Test
-    void fitsBothPanelsAtNarrowSizesAndBottomEdge() {
+    void clipsHeightWithoutShrinkingAndKeepsPanelsSeparate() {
         for (int width : new int[]{240, 320, 640}) {
             var layout = ComparisonLayout.place(width, 240, width - 20, 220, 230, 350, 330, 400);
             assertTrue(layout.x() >= 12);
             assertTrue(layout.y() >= 12);
-            assertTrue(layout.x() + (230 + ComparisonLayout.GAP + 330) * layout.scale() <= width - 11);
-            assertTrue(layout.y() + 402 * layout.scale() <= 229);
+            assertEquals(1F, layout.scale());
+            assertEquals(216, layout.viewportHeight());
+            assertTrue(layout.y() + layout.viewportHeight() <= 228);
             assertTrue(layout.comparisonX() >= layout.primaryX() + 230 + ComparisonLayout.GAP
                     || layout.primaryX() >= layout.comparisonX() + 330 + ComparisonLayout.GAP);
         }
+    }
+
+    @Test
+    void keepsShortPanelsAtNativeHeightAndBoundsVerySmallWindows() {
+        var shortPanels = ComparisonLayout.place(1000, 600, 200, 550, 150, 100, 200, 150);
+        assertEquals(150, shortPanels.viewportHeight());
+        assertEquals(438, shortPanels.y());
+        var tiny = ComparisonLayout.place(100, 20, 5, 5, 150, 200, 200, 250);
+        assertEquals(1F, tiny.scale());
+        assertEquals(1, tiny.viewportHeight());
     }
 }

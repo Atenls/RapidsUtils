@@ -3,6 +3,7 @@ package com.atenls.rapidsutils.client.equipment;
 import com.atenls.rapidsutils.client.config.RapidsConfig;
 import com.atenls.rapidsutils.client.mixin.DrawContextAccessor;
 import com.atenls.rapidsutils.equipment.ComparisonLayout;
+import com.atenls.rapidsutils.equipment.ComparisonScroll;
 import com.atenls.rapidsutils.equipment.EquipmentComparison;
 import com.atenls.rapidsutils.equipment.EquipmentSnapshot;
 import net.minecraft.client.MinecraftClient;
@@ -11,6 +12,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.tooltip.TooltipBackgroundRenderer;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.gui.tooltip.TooltipPositioner;
+import net.minecraft.client.util.InputUtil;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.EquippableComponent;
 import net.minecraft.entity.EquipmentSlot;
@@ -32,7 +34,7 @@ public final class EquipmentComparisonTooltip {
 
     private EquipmentComparisonTooltip() { }
 
-    public static void append(DrawContext context, Slot hovered) {
+    public static void append(DrawContext context, Slot hovered, ScrollState scroll) {
         Runnable original = ((DrawContextAccessor) context).rapidsutils$getTooltipDrawer();
         MinecraftClient client = MinecraftClient.getInstance();
         if (original == null || !RapidsConfig.get().equipmentComparison
@@ -90,9 +92,10 @@ public final class EquipmentComparisonTooltip {
         }
         comparison.add(Text.empty());
         List<TooltipComponent> side = components(comparison);
+        scroll.track(candidate, equipped);
         // Keep the exact drawer installed by vanilla and other mods, including its components and positioner.
         ((DrawContextAccessor) context).rapidsutils$setTooltipDrawer(() -> {
-            PENDING.set(new Pending(context, side));
+            PENDING.set(new Pending(context, side, scroll));
             try {
                 original.run();
             } finally {
@@ -118,21 +121,70 @@ public final class EquipmentComparisonTooltip {
                 mouseX, mouseY, mainWidth, mainHeight);
         var layout = ComparisonLayout.place(context.getScaledWindowWidth(), context.getScaledWindowHeight(),
                 anchor.x(), anchor.y(), mainWidth, mainHeight, sideWidth, sideHeight);
+        ScrollState scroll = pending.scroll();
+        scroll.travel.configure(mainHeight, sideHeight, layout.viewportHeight());
+        scroll.rendered = true;
         context.getMatrices().pushMatrix();
         try {
             context.getMatrices().translate(layout.x(), layout.y());
-            context.getMatrices().scale(layout.scale());
             // Native backgrounds extend 12 pixels past the text bounds. Draw both before any
             // foreground so a neighboring background cannot darken already rendered glyphs.
-            TooltipBackgroundRenderer.render(context, layout.primaryX(), 0, mainWidth, mainHeight, style);
-            TooltipBackgroundRenderer.render(context, layout.comparisonX(), 0, sideWidth, sideHeight, null);
+            TooltipBackgroundRenderer.render(context, layout.primaryX(), 0, mainWidth,
+                    Math.min(mainHeight, layout.viewportHeight()), style);
+            TooltipBackgroundRenderer.render(context, layout.comparisonX(), 0, sideWidth,
+                    Math.min(sideHeight, layout.viewportHeight()), null);
             context.createNewRootLayer();
-            drawContents(context, font, main, layout.primaryX(), mainWidth, mainHeight);
-            drawContents(context, font, side, layout.comparisonX(), sideWidth, sideHeight);
+            drawPanel(context, font, main, layout.primaryX(), mainWidth, mainHeight, layout.viewportHeight(), scroll.travel);
+            drawPanel(context, font, side, layout.comparisonX(), sideWidth, sideHeight, layout.viewportHeight(), scroll.travel);
         } finally {
             context.getMatrices().popMatrix();
         }
         return true;
+    }
+
+    private static void drawPanel(DrawContext context, TextRenderer font, List<TooltipComponent> lines,
+                                  int x, int width, int height, int viewportHeight, ComparisonScroll scroll) {
+        if (height <= viewportHeight) {
+            drawContents(context, font, lines, x, width, height);
+            return;
+        }
+        int offset = scroll.offset(height, viewportHeight);
+        // Establish the viewport before translating the content; DrawContext transforms scissors.
+        context.enableScissor(x - 2, 0, x + width + 2, viewportHeight + 2);
+        context.getMatrices().pushMatrix();
+        try {
+            context.getMatrices().translate(0, -offset);
+            drawContents(context, font, lines, x, width, height);
+        } finally {
+            context.getMatrices().popMatrix();
+            context.disableScissor();
+        }
+        if (offset > 0) {
+            drawScrollArrow(context, x, width, -8, true);
+        }
+        if (offset < height - viewportHeight) {
+            drawScrollArrow(context, x, width, viewportHeight + 5, false);
+        }
+    }
+
+    private static void drawScrollArrow(DrawContext context, int x, int width, int y, boolean up) {
+        // A seven-pixel chevron with a soft shadow and tapered rules, inside the native padding.
+        int center = x + width / 2;
+        int ruleLength = Math.max(0, Math.min(11, width / 2 - 8));
+        for (int i = 0; i < ruleLength; i++) {
+            int alpha = 32 + (ruleLength - i) * 5;
+            int color = (alpha << 24) | 0x9283B0;
+            context.fill(center - 7 - i, y + 2, center - 6 - i, y + 3, color);
+            context.fill(center + 6 + i, y + 2, center + 7 + i, y + 3, color);
+        }
+        for (int i = 0; i < 4; i++) {
+            int row = y + (up ? i : 3 - i);
+            int color = i == 0 ? 0xFFF0E8FF : i == 3 ? 0xFF8E829F : 0xFFC2B6D4;
+            context.fill(center - i, row + 1, center - i + 1, row + 2, 0xB010081C);
+            context.fill(center + i, row + 1, center + i + 1, row + 2, 0xB010081C);
+            context.fill(center - i, row, center - i + 1, row + 1, color);
+            context.fill(center + i, row, center + i + 1, row + 1, color);
+        }
     }
 
     private static void drawContents(DrawContext context, TextRenderer font, List<TooltipComponent> lines,
@@ -152,7 +204,51 @@ public final class EquipmentComparisonTooltip {
         }
     }
 
-    private record Pending(DrawContext context, List<TooltipComponent> side) { }
+    private record Pending(DrawContext context, List<TooltipComponent> side, ScrollState scroll) { }
+
+    /** Owned by one inventory screen, so offsets cannot leak between screens or players. */
+    public static final class ScrollState {
+        private final ComparisonScroll travel = new ComparisonScroll();
+        private Slot hovered;
+        private ItemStack candidate = ItemStack.EMPTY;
+        private ItemStack equipped = ItemStack.EMPTY;
+        private boolean rendered;
+
+        public void beginFrame(Slot slot) {
+            rendered = false;
+            if (hovered != slot) {
+                clear();
+                hovered = slot;
+            }
+        }
+
+        private void track(ItemStack next, ItemStack old) {
+            if (!ItemStack.areEqual(candidate, next) || !ItemStack.areEqual(equipped, old)) {
+                travel.reset();
+                candidate = next.copy();
+                equipped = old.copy();
+            }
+        }
+
+        public boolean scroll(Slot slot, double vertical) {
+            MinecraftClient client = MinecraftClient.getInstance();
+            if (!rendered || slot == null || slot != hovered || !RapidsConfig.get().equipmentComparison
+                    || !ItemStack.areEqual(candidate, slot.getStack())
+                    || !(InputUtil.isKeyPressed(client.getWindow(), InputUtil.GLFW_KEY_LEFT_SHIFT)
+                    || InputUtil.isKeyPressed(client.getWindow(), InputUtil.GLFW_KEY_RIGHT_SHIFT))) {
+                return false;
+            }
+            return travel.scroll(vertical);
+        }
+
+        public void clear() {
+            travel.reset();
+            hovered = null;
+            candidate = ItemStack.EMPTY;
+            equipped = ItemStack.EMPTY;
+            rendered = false;
+        }
+    }
 
     private static EquipmentSlot slot(ItemStack stack) {
         EquippableComponent equippable = stack.get(DataComponentTypes.EQUIPPABLE);
